@@ -8,6 +8,6 @@ jigsawview
 
 try:
     VERSION = __import__('pkg_resources') \
-        .get_distribution('alternative_views').version
+        .get_distribution('jigsawview').version
 except Exception, e:
     VERSION = 'unknown'
