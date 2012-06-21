@@ -18,4 +18,5 @@ class BasePiece(object):
 
 
 class Piece(BasePiece):
+
     pass

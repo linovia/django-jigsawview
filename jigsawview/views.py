@@ -21,7 +21,7 @@ def get_declared_pieces(bases, attrs):
         for piece_name, obj in attrs.items() if isinstance(obj, Piece)]
     pieces.sort(key=lambda x: x[1].creation_counter)
 
-    # If this class is subclassing another Form, add that Form's fields.
+    # If this class is subclassing another View, add that View's pieces.
     # Note that we loop over the bases in *reverse*. This is necessary in
     # order to preserve the correct order of fields.
     for base in bases[::-1]:
@@ -42,6 +42,22 @@ class ViewMetaclass(type):
         return new_class
 
 
+class BoundPiece(object):
+
+    def __init__(self, view, piece, name):
+        self.name = name,
+        self.piece = piece
+        self.view = view
+
+
 class JigsawView():
 
     __metaclass__ = ViewMetaclass
+
+    def __getitem__(self, name):
+        "Returns a BoundPiece with the given name."
+        try:
+            field = self.pieces[name]
+        except KeyError:
+            raise KeyError('Key %r not found in JigsawView' % name)
+        return BoundPiece(self, field, name)

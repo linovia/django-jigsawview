@@ -40,7 +40,7 @@ class MySubView2(MyView2):
 
 
 #
-# TESTS FOR THE PIECE ORDERING IN VIEWS
+# TESTS FOR THE PIECE IN VIEWS - ORDERING, TYPES...
 #
 
 
@@ -74,3 +74,9 @@ class TestJigsawViewPiece(TestCase):
         view.pieces = SortedDict()
         self.assertEqual(view.pieces.keys(), [])
         self.assertEqual(MyView1.base_pieces.keys(), ['piece1', 'piece2'])
+
+    def test_view_contains_bound_pieces(self):
+        view = MySubView()
+        from jigsawview.views import BoundPiece
+        self.assertTrue(isinstance(view['piece2'], BoundPiece))
+        self.assertTrue(isinstance(view['piece3'], BoundPiece))
