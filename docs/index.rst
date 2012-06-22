@@ -3,14 +3,23 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to django-jigsawview's documentation!
+Welcome to Django Jigsawview's documentation!
 =============================================
+
+Django Jigsawview is a Django application that targets easy view creation and
+fast development.
+
+This has been started after the frustration on Django's generic class based
+views and the lack of a more generic solution.
+
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
+   design
+   object_piece
 
 
 Indices and tables
