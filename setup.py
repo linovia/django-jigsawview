@@ -11,6 +11,8 @@ from setuptools import setup, find_packages
 
 tests_require = [
     'mock',
+    'unittest2',
+    'nose',
 ]
 
 install_requires = [
