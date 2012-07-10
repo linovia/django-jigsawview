@@ -69,6 +69,9 @@ class JigsawView():
         return BoundPiece(self, field, name)
 
     def get_template_name(self):
+        """
+        Returns the best matching template name.
+        """
         if self.template_name:
             return u'%s' % self.template_name
 
@@ -81,3 +84,12 @@ class JigsawView():
                 return u'%s%s.html' % (result, self.mode)
 
         return None
+
+    def get_context_data(self):
+        """
+        Returns all the aggregated contexes from the pieces.
+        """
+        context = {}
+        for piece_name, piece in self.pieces.items():
+            context = piece.get_context_data(context)
+        return context

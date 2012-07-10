@@ -16,9 +16,19 @@ from jigsawview.views import JigsawView
 class MyPiece1(Piece):
     template_name = 'my_piece_'
 
+    def get_context_data(self, context):
+        context['my_piece_1'] = 'azerty'
+        return context
+
 
 class MyPiece2(Piece):
     pass
+
+
+class MyPiece3(Piece):
+
+    def get_context_data(self, context):
+        return {}
 
 
 class MyView1(JigsawView):
@@ -37,6 +47,10 @@ class MySubView(MyView1):
 
 class MySubView2(MyView2):
     piece3 = MyPiece1()
+
+
+class MyView3(MyView1):
+    piece3 = MyPiece3()
 
 
 #
@@ -134,3 +148,19 @@ class TestJigsawTemplateRendering(TestCase):
         self.assertEqual(
             view.get_template_name(),
             'my_piece_list.html')
+
+    def test_basic_context(self):
+        view = MyView1()
+        self.assertEqual(
+            view.get_context_data(), {
+                'my_piece_1': 'azerty',
+        })
+        view = MyView2()
+        self.assertEqual(
+            view.get_context_data(), {
+                'my_piece_1': 'azerty',
+        })
+
+    def test_get_context_data_can_discard_context_data(self):
+        view = MyView3()
+        self.assertEqual(view.get_context_data(), {})
