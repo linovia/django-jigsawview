@@ -20,7 +20,7 @@ class BasePiece(object):
 class Piece(BasePiece):
     template_name = None
 
-    def get_template_name(self):
+    def get_template_name(self, *args, **kwargs):
         return self.template_name
 
     def get_context(self, context):
