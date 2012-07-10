@@ -23,5 +23,5 @@ class Piece(BasePiece):
     def get_template_name(self, *args, **kwargs):
         return self.template_name
 
-    def get_context_data(self, context):
+    def get_context_data(self, context, mode, *args, **kwargs):
         return context

@@ -91,5 +91,5 @@ class JigsawView():
         """
         context = {}
         for piece_name, piece in self.pieces.items():
-            context = piece.get_context_data(context)
+            context = piece.get_context_data(context, self.mode)
         return context

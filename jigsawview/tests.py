@@ -16,7 +16,7 @@ from jigsawview.views import JigsawView
 class MyPiece1(Piece):
     template_name = 'my_piece_'
 
-    def get_context_data(self, context):
+    def get_context_data(self, context, *args, **kwargs):
         context['my_piece_1'] = 'azerty'
         return context
 
@@ -25,10 +25,17 @@ class MyPiece2(Piece):
     pass
 
 
-class MyPiece3(Piece):
-
-    def get_context_data(self, context):
+class DiscardContextPiece(Piece):
+    def get_context_data(self, context, *args, **kwargs):
         return {}
+
+
+class ContextDependsOnModePiece(Piece):
+    def get_context_data(self, context, mode, *args, **kwargs):
+        context.update({
+            mode: True,
+        })
+        return context
 
 
 class MyView1(JigsawView):
@@ -49,8 +56,12 @@ class MySubView2(MyView2):
     piece3 = MyPiece1()
 
 
-class MyView3(MyView1):
-    piece3 = MyPiece3()
+class DiscardContextView(MyView1):
+    discard_context_piece = DiscardContextPiece()
+
+
+class ContextDependsOnModeView(MyView1):
+    mode_dependant_context = ContextDependsOnModePiece()
 
 
 #
@@ -162,5 +173,18 @@ class TestJigsawTemplateRendering(TestCase):
         })
 
     def test_get_context_data_can_discard_context_data(self):
-        view = MyView3()
+        view = DiscardContextView()
         self.assertEqual(view.get_context_data(), {})
+
+    def test_get_context_data_can_depend_on_mode(self):
+        view = ContextDependsOnModeView()
+        view.mode = 'list'
+        self.assertEqual(view.get_context_data(), {
+            'list': True,
+            'my_piece_1': 'azerty',
+        })
+        view.mode = 'detail'
+        self.assertEqual(view.get_context_data(), {
+            'detail': True,
+            'my_piece_1': 'azerty',
+        })
