@@ -97,7 +97,7 @@ class TestJigsawTemplateRendering(TestCase):
         result = view.get_template_name()
         self.assertEqual(result, template_name)
 
-    def test_template_name_preceed_template_prefix(self):
+    def test_template_name_preceed_template_prefix_or_pieces(self):
         template_name = self.template_strings['name']
         template_prefix = self.template_strings['prefix']
         view = MyView1()
