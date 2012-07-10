@@ -80,3 +80,44 @@ class TestJigsawViewPiece(TestCase):
         from jigsawview.views import BoundPiece
         self.assertTrue(isinstance(view['piece2'], BoundPiece))
         self.assertTrue(isinstance(view['piece3'], BoundPiece))
+
+
+class TestJigsawTemplateRendering(TestCase):
+
+    def setUp(self):
+        self.template_strings = {
+            'name': 'some_template_nam.html',
+            'prefix': 'a_prefix_'
+        }
+
+    def test_template_name(self):
+        template_name = self.template_strings['name']
+        view = MyView1()
+        view.template_name = template_name
+        result = view.get_template_name()
+        self.assertEqual(result, template_name)
+
+    def test_template_name_preceed_template_prefix(self):
+        template_name = self.template_strings['name']
+        template_prefix = self.template_strings['prefix']
+        view = MyView1()
+        view.mode = 'list'
+        view.template_name = template_name
+        view.template_name_prefix = template_prefix
+        result = view.get_template_name()
+        self.assertEqual(result, template_name)
+
+    def test_template_prefix(self):
+        template_prefix = self.template_strings['prefix']
+
+        view = MyView1()
+        view.mode = 'list'
+        view.template_name_prefix = template_prefix
+        result = view.get_template_name()
+        self.assertEqual(result, template_prefix + 'list')
+
+        view = MyView1()
+        view.mode = 'detail'
+        view.template_name_prefix = template_prefix
+        result = view.get_template_name()
+        self.assertEqual(result, template_prefix + 'detail')

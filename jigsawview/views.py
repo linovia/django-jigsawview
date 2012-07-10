@@ -35,6 +35,7 @@ class ViewMetaclass(type):
     """
     A meta class the will gather the view's pieces
     """
+
     def __new__(cls, name, bases, attrs):
         attrs['base_pieces'] = get_declared_pieces(bases, attrs)
         attrs['pieces'] = copy.copy(attrs['base_pieces'])
@@ -52,6 +53,11 @@ class BoundPiece(object):
 
 class JigsawView():
 
+    mode = None
+
+    template_name = None
+    template_name_prefix = None
+
     __metaclass__ = ViewMetaclass
 
     def __getitem__(self, name):
@@ -61,3 +67,12 @@ class JigsawView():
         except KeyError:
             raise KeyError('Key %r not found in JigsawView' % name)
         return BoundPiece(self, field, name)
+
+    def get_template_name(self):
+        if self.template_name:
+            return u'%s' % self.template_name
+
+        if self.template_name_prefix:
+            return u'%s%s' % (self.template_name_prefix, self.mode)
+
+        return None

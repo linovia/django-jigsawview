@@ -19,4 +19,5 @@ class BasePiece(object):
 
 class Piece(BasePiece):
 
-    pass
+    def get_context(self, context):
+        return context
