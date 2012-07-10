@@ -73,6 +73,11 @@ class JigsawView():
             return u'%s' % self.template_name
 
         if self.template_name_prefix:
-            return u'%s%s' % (self.template_name_prefix, self.mode)
+            return u'%s%s.html' % (self.template_name_prefix, self.mode)
+
+        for piece_name, piece in reversed(self.pieces.items()):
+            result = piece.get_template_name()
+            if result:
+                return u'%s%s.html' % (result, self.mode)
 
         return None

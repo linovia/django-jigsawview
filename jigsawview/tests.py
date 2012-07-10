@@ -14,7 +14,7 @@ from jigsawview.views import JigsawView
 
 
 class MyPiece1(Piece):
-    pass
+    template_name = 'my_piece_'
 
 
 class MyPiece2(Piece):
@@ -114,10 +114,23 @@ class TestJigsawTemplateRendering(TestCase):
         view.mode = 'list'
         view.template_name_prefix = template_prefix
         result = view.get_template_name()
-        self.assertEqual(result, template_prefix + 'list')
+        self.assertEqual(result, template_prefix + 'list.html')
 
         view = MyView1()
         view.mode = 'detail'
         view.template_name_prefix = template_prefix
         result = view.get_template_name()
-        self.assertEqual(result, template_prefix + 'detail')
+        self.assertEqual(result, template_prefix + 'detail.html')
+
+    def test_use_not_null_piece_template_name(self):
+        view = MyView1()
+        view.mode = 'list'
+        self.assertEqual(
+            view.get_template_name(),
+            'my_piece_list.html')
+
+        view = MyView2()
+        view.mode = 'list'
+        self.assertEqual(
+            view.get_template_name(),
+            'my_piece_list.html')
