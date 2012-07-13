@@ -87,6 +87,7 @@ class ObjectPiece(Piece):
 
     def get_context_data(self, request, context, mode, **kwargs):
         mode = self.mode or mode
+        print self.view_name, mode, context
         if mode in ('detail', 'update', 'delete'):
             obj = self.get_object(**kwargs)
             context_object_name = self.get_context_object_name(obj)

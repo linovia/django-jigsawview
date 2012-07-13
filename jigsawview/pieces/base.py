@@ -22,9 +22,10 @@ class Piece(BasePiece):
     template_name = None
     template_name_prefix = None
     mode = None
+    base_mode = None
 
     def __init__(self, mode=None, *args, **kwargs):
-        self.mode = mode
+        self.base_mode = self.mode = mode
         super(Piece, self).__init__(*args, **kwargs)
 
     def get_template_name(self, *args, **kwargs):

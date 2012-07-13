@@ -76,7 +76,8 @@ class JigsawView(object):
     def set_mode(self, mode):
         self.mode = mode
         for name, piece in self.pieces.iteritems():
-            piece.mode = mode
+            if not piece.base_mode:
+                piece.mode = mode
 
     def __getitem__(self, name):
         "Returns a BoundPiece with the given name."

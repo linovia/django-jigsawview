@@ -61,6 +61,11 @@ class MySubView2(MyView2):
     piece3 = MyPiece1()
 
 
+class MyView3(JigsawView):
+    piece1 = MyPiece1(mode='list')
+    piece2 = MyPiece2()
+
+
 class DiscardContextView(MyView1):
     discard_context_piece = DiscardContextPiece()
 
@@ -110,6 +115,22 @@ class TestJigsawViewPiece(TestCase):
         from jigsawview.views import BoundPiece
         self.assertTrue(isinstance(view['piece2'], BoundPiece))
         self.assertTrue(isinstance(view['piece3'], BoundPiece))
+
+    def test_view_sets_piece_mode(self):
+        view = MyView1()
+        view.set_mode('detail')
+        self.assertEqual(view.pieces['piece1'].mode, 'detail')
+        view.set_mode('list')
+        self.assertEqual(view.pieces['piece1'].mode, 'list')
+
+    def test_view_sets_piece_mode_unless_piece_has_explicit_mode(self):
+        view = MyView3()
+        view.set_mode('detail')
+        self.assertEqual(view.pieces['piece1'].mode, 'list')
+        self.assertEqual(view.pieces['piece2'].mode, 'detail')
+        view.set_mode('list')
+        self.assertEqual(view.pieces['piece1'].mode, 'list')
+        self.assertEqual(view.pieces['piece2'].mode, 'list')
 
 
 class TestJigsawTemplateRendering(TestCase):

@@ -17,7 +17,7 @@ class MyOtherObjectPiece(ObjectPiece):
 
 
 class ObjectView(JigsawView):
-    # other = MyOtherObjectPiece(mode='list')
+    other = MyOtherObjectPiece(mode='list')
     obj = MyObjectPiece()
 
 
