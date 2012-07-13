@@ -16,6 +16,7 @@ if not settings.configured:
             'django.contrib.sessions',
             'django.contrib.auth',
             'jigsawview',
+            'jigsawview.tests',
         ],
         ROOT_URLCONF='',
         DEBUG=False,

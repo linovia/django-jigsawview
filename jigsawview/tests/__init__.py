@@ -2,11 +2,14 @@
 Unit tests for the jigsawview application
 """
 
-from unittest2 import TestCase
+# from unittest2 import TestCase
+from django.test import TestCase
+
 
 from jigsawview.pieces import Piece
 from jigsawview.views import JigsawView
 
+from jigsawview.tests.models import MyObjectModel, MyOtherObjectModel
 
 #
 # Various test Pieces and View definitions
@@ -203,7 +206,27 @@ class TestJigsawTemplateRendering(TestCase):
 
 class JigsawViewTest(TestCase):
 
-    pass
+    fixtures = ['object_piece.json']
+    urls = 'jigsawview.tests.urls'
+
+    def test_detail_view_context(self):
+        response = self.client.get('/object/1/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response=response,
+            template_name='local_tests/obj_detail.html')
+        self.assertEqual(
+            sorted(response.context_data.keys()),
+            sorted(['obj', 'other_paginator', 'other_page_obj',
+                'other_is_paginated', 'other_list'
+            ]))
+        self.assertEqual(
+            response.context_data['obj'],
+            MyObjectModel.objects.get(id=1)
+        )
+        self.assertEqual(
+            [(o.id, type(o)) for o in response.context_data['other_list']],
+            [(o.id, type(o)) for o in MyOtherObjectModel.objects.all()]
+        )
 
 
 #

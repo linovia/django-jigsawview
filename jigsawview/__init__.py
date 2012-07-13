@@ -11,3 +11,6 @@ try:
         .get_distribution('jigsawview').version
 except Exception, e:
     VERSION = 'unknown'
+
+
+from jigsawview.views import JigsawView
