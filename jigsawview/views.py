@@ -3,7 +3,11 @@ Base Jigsaw view.
 """
 
 import copy
+
+from functools import update_wrapper
+
 from django.utils.datastructures import SortedDict
+from django.utils.decorators import classonlymethod
 
 from jigsawview.pieces import Piece
 
@@ -51,14 +55,20 @@ class BoundPiece(object):
         self.view = view
 
 
-class JigsawView():
+class JigsawView(object):
 
     mode = None
+    http_method_names = [
+        'get', 'post', 'put', 'delete', 'head', 'options', 'trace'
+    ]
 
     template_name = None
     template_name_prefix = None
 
     __metaclass__ = ViewMetaclass
+
+    def __init__(self, mode=None):
+        self.mode = mode
 
     def __getitem__(self, name):
         "Returns a BoundPiece with the given name."
@@ -85,11 +95,42 @@ class JigsawView():
 
         return None
 
-    def get_context_data(self):
+    def get_context_data(self, request, **kwargs):
         """
         Returns all the aggregated contexes from the pieces.
         """
         context = {}
         for piece_name, piece in self.pieces.items():
-            context = piece.get_context_data(context, self.mode)
+            context = piece.get_context_data(request, context, self.mode, **kwargs)
         return context
+
+    @classonlymethod
+    def as_view(cls, **initkwargs):
+        """
+        Main entry point for a request-response process.
+        """
+        # sanitize keyword arguments
+        for key in initkwargs:
+            if key in cls.http_method_names:
+                raise TypeError(u"You tried to pass in the %s method name as a "
+                                u"keyword argument to %s(). Don't do that."
+                                % (key, cls.__name__))
+            if not hasattr(cls, key):
+                raise TypeError(u"%s() received an invalid keyword %r" % (
+                    cls.__name__, key))
+
+        def view(request, *args, **kwargs):
+            self = cls(**initkwargs)
+            return self.dispatch(request, *args, **kwargs)
+
+        # take name and docstring from class
+        update_wrapper(view, cls, updated=())
+
+        # and possible attributes set by decorators
+        # like csrf_exempt from dispatch
+        update_wrapper(view, cls.dispatch, assigned=())
+        return view
+
+    def dispatch(self, request, *args, **kwargs):
+        context = self.get_context_data(request, **kwargs)
+        return None

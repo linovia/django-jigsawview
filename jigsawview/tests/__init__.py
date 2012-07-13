@@ -19,7 +19,7 @@ from jigsawview.tests.models import MyObjectModel, MyOtherObjectModel
 class MyPiece1(Piece):
     template_name = 'my_piece_'
 
-    def get_context_data(self, context, *args, **kwargs):
+    def get_context_data(self, request, context, *args, **kwargs):
         context['my_piece_1'] = 'azerty'
         return context
 
@@ -29,12 +29,12 @@ class MyPiece2(Piece):
 
 
 class DiscardContextPiece(Piece):
-    def get_context_data(self, context, *args, **kwargs):
+    def get_context_data(self, request, context, *args, **kwargs):
         return {}
 
 
 class ContextDependsOnModePiece(Piece):
-    def get_context_data(self, context, mode, *args, **kwargs):
+    def get_context_data(self, request, context, mode, *args, **kwargs):
         context.update({
             mode: True,
         })
@@ -172,28 +172,28 @@ class TestJigsawTemplateRendering(TestCase):
     def test_basic_context(self):
         view = MyView1()
         self.assertEqual(
-            view.get_context_data(), {
+            view.get_context_data(None), {
                 'my_piece_1': 'azerty',
         })
         view = MyView2()
         self.assertEqual(
-            view.get_context_data(), {
+            view.get_context_data(None), {
                 'my_piece_1': 'azerty',
         })
 
     def test_get_context_data_can_discard_context_data(self):
         view = DiscardContextView()
-        self.assertEqual(view.get_context_data(), {})
+        self.assertEqual(view.get_context_data(None), {})
 
     def test_get_context_data_can_depend_on_mode(self):
         view = ContextDependsOnModeView()
         view.mode = 'list'
-        self.assertEqual(view.get_context_data(), {
+        self.assertEqual(view.get_context_data(None), {
             'list': True,
             'my_piece_1': 'azerty',
         })
         view.mode = 'detail'
-        self.assertEqual(view.get_context_data(), {
+        self.assertEqual(view.get_context_data(None), {
             'detail': True,
             'my_piece_1': 'azerty',
         })

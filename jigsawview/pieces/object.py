@@ -20,7 +20,7 @@ class ObjectPiece(Piece):
     slug_url_kwarg = 'slug'
     pk_url_kwarg = 'pk'
 
-    def get_object(self, queryset=None):
+    def get_object(self, queryset=None, **kwargs):
         """
         Returns the object the view is displaying.
 
@@ -33,8 +33,8 @@ class ObjectPiece(Piece):
             queryset = self.get_queryset()
 
         # Next, try looking up by primary key.
-        pk = self.kwargs.get(self.pk_url_kwarg, None)
-        slug = self.kwargs.get(self.slug_url_kwarg, None)
+        pk = kwargs.get(self.pk_url_kwarg, None)
+        slug = kwargs.get(self.slug_url_kwarg, None)
         if pk is not None:
             queryset = queryset.filter(pk=pk)
 
@@ -90,10 +90,16 @@ class ObjectPiece(Piece):
         else:
             return None
 
-    def get_context_data(self, context, mode, **kwargs):
-        context_object_name = self.get_context_object_name(self.object)
+    def get_context_data(self, request, context, mode, **kwargs):
+        mode = self.mode or mode
         if mode in ('detail', 'update', 'delete'):
-            context[context_object_name] = self.object
+            obj = self.get_object(**kwargs)
+            context_object_name = self.get_context_object_name(obj)
+            context[context_object_name] = obj
+        # elif mode == 'list':
+        #     objs = self.get_queryset()
+        #     context_object_name = self.get_context_object_name(objs) + '_list'
+        #     context[context_object_name] = objs
         return context
 
     def get_template_name(self, *args, **kwargs):
