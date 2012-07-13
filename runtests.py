@@ -15,8 +15,7 @@ if not settings.configured:
             'django.contrib.contenttypes',
             'django.contrib.sessions',
             'django.contrib.auth',
-            'alternative_views',
-            'local_tests',
+            'jigsawview',
         ],
         ROOT_URLCONF='',
         DEBUG=False,
@@ -27,7 +26,7 @@ from django.test.simple import DjangoTestSuiteRunner
 
 def runtests(*test_args):
     if not test_args:
-        test_args = ['local_tests']
+        test_args = ['jigsawview']
     parent = dirname(abspath(__file__))
     sys.path.insert(0, parent)
     failures = DjangoTestSuiteRunner(failfast=False).run_tests(

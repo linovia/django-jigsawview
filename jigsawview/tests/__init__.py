@@ -197,7 +197,17 @@ class TestJigsawTemplateRendering(TestCase):
 
 
 #
-# Object Piece Tests
+# JIGSAW VIEW TESTS
+#
+
+
+class JigsawViewTest(TestCase):
+
+    pass
+
+
+#
+# OBJECT PIECE TESTS
 #
 
 
