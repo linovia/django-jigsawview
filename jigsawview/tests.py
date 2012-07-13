@@ -154,6 +154,12 @@ class TestJigsawTemplateRendering(TestCase):
             view.get_template_name(),
             'my_piece_list.html')
 
+        view = MyView1()
+        view.mode = 'detail'
+        self.assertEqual(
+            view.get_template_name(),
+            'my_piece_detail.html')
+
         view = MyView2()
         view.mode = 'list'
         self.assertEqual(
@@ -188,3 +194,12 @@ class TestJigsawTemplateRendering(TestCase):
             'detail': True,
             'my_piece_1': 'azerty',
         })
+
+
+#
+# Object Piece Tests
+#
+
+
+class ObjectPieceTest(TestCase):
+    pass
