@@ -105,12 +105,7 @@ class ObjectPiece(Piece):
     def get_template_name(self, *args, **kwargs):
         # The least-specific option is the default <app>/<model>_detail.html;
         # only use this if the object in question is a model.
-        if hasattr(self.object, '_meta'):
-            return "%s/%s_" % (
-                self.object._meta.app_label,
-                self.object._meta.object_name.lower()
-            )
-        elif hasattr(self, 'model') and hasattr(self.model, '_meta'):
+        if hasattr(self, 'model') and hasattr(self.model, '_meta'):
             return "%s/%s_" % (
                 self.model._meta.app_label,
                 self.model._meta.object_name.lower()
