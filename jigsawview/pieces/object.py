@@ -83,12 +83,7 @@ class ObjectPiece(Piece):
         """
         Get the name to use for the object.
         """
-        if self.context_object_name:
-            return self.context_object_name
-        elif hasattr(obj, '_meta'):
-            return smart_str(obj._meta.object_name.lower())
-        else:
-            return None
+        return self.view_name
 
     def get_context_data(self, request, context, mode, **kwargs):
         mode = self.mode or mode
@@ -103,11 +98,4 @@ class ObjectPiece(Piece):
         return context
 
     def get_template_name(self, *args, **kwargs):
-        # The least-specific option is the default <app>/<model>_detail.html;
-        # only use this if the object in question is a model.
-        if hasattr(self, 'model') and hasattr(self.model, '_meta'):
-            return "%s/%s_" % (
-                self.model._meta.app_label,
-                self.model._meta.object_name.lower()
-            )
-        return self.template_name
+        return u'%s_%s' % (self.view_name, self.mode)

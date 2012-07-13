@@ -69,7 +69,14 @@ class JigsawView(object):
     __metaclass__ = ViewMetaclass
 
     def __init__(self, mode=None):
+        self.set_mode(mode)
+        for name, piece in self.pieces.iteritems():
+            piece.view_name = name
+
+    def set_mode(self, mode):
         self.mode = mode
+        for name, piece in self.pieces.iteritems():
+            piece.mode = mode
 
     def __getitem__(self, name):
         "Returns a BoundPiece with the given name."
@@ -92,7 +99,7 @@ class JigsawView(object):
         for piece_name, piece in reversed(self.pieces.items()):
             result = piece.get_template_name()
             if result:
-                return u'%s%s.html' % (result, self.mode)
+                return u'%s.html' % result
 
         return None
 

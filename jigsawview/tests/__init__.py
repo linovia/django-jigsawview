@@ -19,7 +19,7 @@ from jigsawview.tests.views import SingleObjectView, MyObjectPiece
 
 
 class MyPiece1(Piece):
-    template_name = 'my_piece_'
+    template_name_prefix = 'my_piece'
 
     def get_context_data(self, request, context, *args, **kwargs):
         context['my_piece_1'] = 'azerty'
@@ -131,7 +131,7 @@ class TestJigsawTemplateRendering(TestCase):
         template_name = self.template_strings['name']
         template_prefix = self.template_strings['prefix']
         view = MyView1()
-        view.mode = 'list'
+        view.set_mode('list')
         view.template_name = template_name
         view.template_name_prefix = template_prefix
         result = view.get_template_name()
@@ -141,32 +141,32 @@ class TestJigsawTemplateRendering(TestCase):
         template_prefix = self.template_strings['prefix']
 
         view = MyView1()
-        view.mode = 'list'
+        view.set_mode('list')
         view.template_name_prefix = template_prefix
         result = view.get_template_name()
         self.assertEqual(result, template_prefix + 'list.html')
 
         view = MyView1()
-        view.mode = 'detail'
+        view.set_mode('detail')
         view.template_name_prefix = template_prefix
         result = view.get_template_name()
         self.assertEqual(result, template_prefix + 'detail.html')
 
     def test_use_not_null_piece_template_name(self):
         view = MyView1()
-        view.mode = 'list'
+        view.set_mode('list')
         self.assertEqual(
             view.get_template_name(),
             'my_piece_list.html')
 
         view = MyView1()
-        view.mode = 'detail'
+        view.set_mode('detail')
         self.assertEqual(
             view.get_template_name(),
             'my_piece_detail.html')
 
         view = MyView2()
-        view.mode = 'list'
+        view.set_mode('list')
         self.assertEqual(
             view.get_template_name(),
             'my_piece_list.html')
@@ -189,12 +189,12 @@ class TestJigsawTemplateRendering(TestCase):
 
     def test_get_context_data_can_depend_on_mode(self):
         view = ContextDependsOnModeView()
-        view.mode = 'list'
+        view.set_mode('list')
         self.assertEqual(view.get_context_data(None), {
             'list': True,
             'my_piece_1': 'azerty',
         })
-        view.mode = 'detail'
+        view.set_mode('detail')
         self.assertEqual(view.get_context_data(None), {
             'detail': True,
             'my_piece_1': 'azerty',
@@ -215,7 +215,7 @@ class JigsawViewTest(TestCase):
         response = self.client.get('/object/1/')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response=response,
-            template_name='tests/myobjectmodel_detail.html')
+            template_name='obj_detail.html')
         self.assertEqual(
             sorted(response.context_data.keys()),
             sorted(['obj', 'other_paginator', 'other_page_obj',
@@ -278,3 +278,6 @@ class ObjectPieceTest(TestCase):
         obj = object_view.get_object(name='other_object_1')
         self.assertTrue(isinstance(obj, MyObjectModel))
         self.assertEqual(obj.id, 1)
+
+    # def test_(self):
+    #     pass

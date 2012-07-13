@@ -18,7 +18,9 @@ class BasePiece(object):
 
 
 class Piece(BasePiece):
+    view_name = None
     template_name = None
+    template_name_prefix = None
     mode = None
 
     def __init__(self, mode=None, *args, **kwargs):
@@ -26,7 +28,11 @@ class Piece(BasePiece):
         super(Piece, self).__init__(*args, **kwargs)
 
     def get_template_name(self, *args, **kwargs):
-        return self.template_name
+        if self.template_name:
+            return u'%s' % self.template_name
+        if self.template_name_prefix:
+            return u'%s_%s' % (self.template_name_prefix, self.mode)
+        return None
 
     def get_context_data(self, request, context, mode, *args, **kwargs):
         return context
