@@ -6,28 +6,7 @@ from __future__ import absolute_import
 
 from django.conf.urls import patterns, url
 
-from jigsawview.pieces import ObjectPiece
-from jigsawview import JigsawView
-
-from jigsawview.tests.models import MyObjectModel, MyOtherObjectModel
-
-
-class MyObjectMixin(ObjectPiece):
-    model = MyObjectModel
-
-
-class MyOtherObjectMixin(ObjectPiece):
-    model = MyOtherObjectModel
-
-
-class ObjectView(JigsawView):
-    other = MyOtherObjectMixin(mode='list')
-    obj = MyObjectMixin()
-
-
-class SameMixinView(JigsawView):
-    obj1 = MyObjectMixin()
-    obj2 = MyObjectMixin()
+from jigsawview.tests.views import ObjectView
 
 
 urlpatterns = patterns('',

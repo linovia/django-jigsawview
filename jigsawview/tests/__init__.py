@@ -4,12 +4,14 @@ Unit tests for the jigsawview application
 
 # from unittest2 import TestCase
 from django.test import TestCase
+from django.test import RequestFactory
 
 
 from jigsawview.pieces import Piece
 from jigsawview.views import JigsawView
 
 from jigsawview.tests.models import MyObjectModel, MyOtherObjectModel
+from jigsawview.tests.views import SingleObjectView, MyObjectPiece
 
 #
 # Various test Pieces and View definitions
@@ -213,7 +215,7 @@ class JigsawViewTest(TestCase):
         response = self.client.get('/object/1/')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response=response,
-            template_name='local_tests/obj_detail.html')
+            template_name='tests/myobjectmodel_detail.html')
         self.assertEqual(
             sorted(response.context_data.keys()),
             sorted(['obj', 'other_paginator', 'other_page_obj',
@@ -235,4 +237,39 @@ class JigsawViewTest(TestCase):
 
 
 class ObjectPieceTest(TestCase):
-    pass
+
+    fixtures = ['object_piece.json']
+
+    def test_get_object_by_pk(self):
+        object_view = MyObjectPiece(mode='detail')
+        obj = object_view.get_object(pk='1')
+        self.assertTrue(isinstance(obj, MyObjectModel))
+        self.assertEqual(obj.id, 1)
+
+    def test_get_object_with_different_pk(self):
+        object_view = MyObjectPiece(mode='detail')
+        object_view.pk_url_kwarg = 'obj_id'
+        obj = object_view.get_object(obj_id='1')
+        self.assertTrue(isinstance(obj, MyObjectModel))
+        self.assertEqual(obj.id, 1)
+
+    def test_get_object_by_slug(self):
+        object_view = MyObjectPiece(mode='detail')
+        obj = object_view.get_object(slug='object_1')
+        self.assertTrue(isinstance(obj, MyObjectModel))
+        self.assertEqual(obj.id, 1)
+
+    def test_get_object_by_custom_url_slug(self):
+        object_view = MyObjectPiece(mode='detail')
+        object_view.slug_url_kwarg = "name"
+        obj = object_view.get_object(name='object_1')
+        self.assertTrue(isinstance(obj, MyObjectModel))
+        self.assertEqual(obj.id, 1)
+
+    def test_get_object_by_custom_slug_field(self):
+        object_view = MyObjectPiece(mode='detail')
+        object_view.slug_field = "other_slug_field"
+        object_view.slug_url_kwarg = "name"
+        obj = object_view.get_object(name='other_object_1')
+        self.assertTrue(isinstance(obj, MyObjectModel))
+        self.assertEqual(obj.id, 1)

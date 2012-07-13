@@ -3,13 +3,16 @@
     "pk": 1,
     "model": "tests.myobjectmodel",
     "fields": {
-      "slug": "test"
+      "slug": "object_1",
+      "other_slug_field": "other_object_1"
     }
   },
   {
     "pk": 2,
     "model": "tests.myobjectmodel",
     "fields": {
+      "slug": "object_2",
+      "other_slug_field": "other_object_2"
     }
   },
   {

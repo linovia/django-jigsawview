@@ -7,7 +7,8 @@ from django.db import models
 
 
 class MyObjectModel(models.Model):
-    slug = models.CharField(max_length=8)
+    slug = models.CharField(max_length=16)
+    other_slug_field = models.CharField(max_length=16)
 
     class Meta:
         ordering = ['id']

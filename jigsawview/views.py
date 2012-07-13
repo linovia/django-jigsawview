@@ -8,6 +8,7 @@ from functools import update_wrapper
 
 from django.utils.datastructures import SortedDict
 from django.utils.decorators import classonlymethod
+from django.template.response import TemplateResponse
 
 from jigsawview.pieces import Piece
 
@@ -131,6 +132,17 @@ class JigsawView(object):
         update_wrapper(view, cls.dispatch, assigned=())
         return view
 
+    def render_to_response(self, request, context, **response_kwargs):
+        """
+        Returns a response with a template rendered with the given context.
+        """
+        return TemplateResponse(
+            request=request,
+            template=self.get_template_name(),
+            context=context,
+            **response_kwargs
+        )
+
     def dispatch(self, request, *args, **kwargs):
         context = self.get_context_data(request, **kwargs)
-        return None
+        return self.render_to_response(request, context)
