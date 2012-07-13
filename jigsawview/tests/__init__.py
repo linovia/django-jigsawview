@@ -240,6 +240,11 @@ class ObjectPieceTest(TestCase):
 
     fixtures = ['object_piece.json']
 
+    def test_get_object_with_no_arguments_raises_an_exception(self):
+        object_view = MyObjectPiece(mode='detail')
+        with self.assertRaises(AttributeError):
+            object_view.get_object()
+
     def test_get_object_by_pk(self):
         object_view = MyObjectPiece(mode='detail')
         obj = object_view.get_object(pk='1')
