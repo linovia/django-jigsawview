@@ -355,3 +355,9 @@ class ObjectPieceTest(TestCase):
             sorted(context['my_object_form'].fields.keys()),
             sorted(['slug', 'other_slug_field'])
         )
+        self.assertEqual(
+            context['my_object_form']['slug'].value(),
+            'object_1')
+        self.assertEqual(
+            context['my_object_form']['other_slug_field'].value(),
+            'other_object_1')
