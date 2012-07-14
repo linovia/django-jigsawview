@@ -6,6 +6,7 @@ from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.http import Http404
 from django.utils.translation import ugettext as _
 from django.utils.encoding import smart_str
+from django.forms import models as model_forms
 
 
 from jigsawview.pieces.base import Piece
@@ -19,6 +20,14 @@ class ObjectPiece(Piece):
     context_object_name = None
     slug_url_kwarg = 'slug'
     pk_url_kwarg = 'pk'
+
+    initial = {}
+    form_class = None
+    success_url = None
+
+    #
+    # Single object management
+    #
 
     def get_object(self, queryset=None, **kwargs):
         """
@@ -56,6 +65,22 @@ class ObjectPiece(Piece):
                           {'verbose_name': queryset.model._meta.verbose_name})
         return obj
 
+    def get_slug_field(self):
+        """
+        Get the name of a slug field to be used to look up by slug.
+        """
+        return self.slug_field
+
+    def get_context_object_name(self, obj=None):
+        """
+        Get the name to use for the object.
+        """
+        return self.view_name
+
+    #
+    # Queryset
+    #
+
     def get_queryset(self):
         """
         Get the queryset to look an object up against. May not be called if
@@ -73,17 +98,62 @@ class ObjectPiece(Piece):
                     })
         return self.queryset._clone()
 
-    def get_slug_field(self):
-        """
-        Get the name of a slug field to be used to look up by slug.
-        """
-        return self.slug_field
+    #
+    # Form management
+    #
 
-    def get_context_object_name(self, obj=None):
+    def get_initial(self):
         """
-        Get the name to use for the object.
+        Returns the initial data to use for forms on this view.
         """
-        return self.view_name
+        return self.initial.copy()
+
+    def get_form_class(self, **kwargs):
+        """
+        Returns the form class to use in this view
+        """
+        if self.form_class:
+            return self.form_class
+        else:
+            if self.model is not None:
+                # If a model has been explicitly provided, use it
+                model = self.model
+            elif 'object' in kwargs and kwargs['object'] is not None:
+                # If this view is operating on a single object, use
+                # the class of that object
+                model = kwargs['object'].__class__
+            else:
+                # Try to get a queryset and extract the model class
+                # from that
+                model = self.get_queryset().model
+            return model_forms.modelform_factory(model)
+
+    def get_form(self, request, **kwargs):
+        """
+        Returns an instance of the form to be used in this view.
+        """
+        form_class = self.get_form_class(**kwargs)
+        return form_class(**self.get_form_kwargs(request, **kwargs))
+
+    def get_form_kwargs(self, request, **kwargs):
+        """
+        Returns the keyword arguments for instanciating the form.
+        """
+        args = {
+            'initial': self.get_initial()
+        }
+        if request.method in ('POST', 'PUT'):
+            args.update({
+                'data': request.POST,
+                'files': request.FILES,
+            })
+        if 'instance' in kwargs:
+            args['instance'] = kwargs['instance']
+        return args
+
+    #
+    # Generic members
+    #
 
     def get_context_data(self, request, context, mode, **kwargs):
         mode = self.mode or mode
@@ -100,6 +170,13 @@ class ObjectPiece(Piece):
                 context_object_name + '_paginator': None,
                 context_object_name + '_page_obj': None,
             })
+
+        if mode == 'update':
+            form = self.get_form(request, instance=obj)
+            context[context_object_name + '_form'] = form
+        elif mode == 'new':
+            form = self.get_form()
+            context[context_object_name + '_form'] = form
         return context
 
     def get_template_name(self, *args, **kwargs):
