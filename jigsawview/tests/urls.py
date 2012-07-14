@@ -10,7 +10,7 @@ from jigsawview.tests.views import ObjectView
 
 
 urlpatterns = patterns('',
-    url(r'^object/$',
+    url(r'^objects/$',
         ObjectView.as_view(mode='list'),
         name='object_list'),
 

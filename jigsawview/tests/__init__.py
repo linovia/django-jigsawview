@@ -251,6 +251,27 @@ class JigsawViewTest(TestCase):
             [(o.id, type(o)) for o in MyOtherObjectModel.objects.all()]
         )
 
+    def test_list_view_context(self):
+        response = self.client.get('/objects/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response=response,
+            template_name='obj_list.html')
+        self.assertEqual(
+            sorted(response.context_data.keys()),
+            sorted([
+                'obj_paginator', 'obj_page_obj',
+                'obj_is_paginated', 'obj_list',
+                'other_paginator', 'other_page_obj',
+                'other_is_paginated', 'other_list',
+            ]))
+        self.assertEqual(
+            [(o.id, type(o)) for o in response.context_data['obj_list']],
+            [(o.id, type(o)) for o in MyObjectModel.objects.all()]
+        )
+        self.assertEqual(
+            [(o.id, type(o)) for o in response.context_data['other_list']],
+            [(o.id, type(o)) for o in MyOtherObjectModel.objects.all()]
+        )
 
 #
 # OBJECT PIECE TESTS
