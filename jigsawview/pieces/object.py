@@ -79,7 +79,7 @@ class ObjectPiece(Piece):
         """
         return self.slug_field
 
-    def get_context_object_name(self, obj):
+    def get_context_object_name(self, obj=None):
         """
         Get the name to use for the object.
         """
@@ -87,15 +87,19 @@ class ObjectPiece(Piece):
 
     def get_context_data(self, request, context, mode, **kwargs):
         mode = self.mode or mode
-        print self.view_name, mode, context
         if mode in ('detail', 'update', 'delete'):
             obj = self.get_object(**kwargs)
             context_object_name = self.get_context_object_name(obj)
             context[context_object_name] = obj
-        # elif mode == 'list':
-        #     objs = self.get_queryset()
-        #     context_object_name = self.get_context_object_name(objs) + '_list'
-        #     context[context_object_name] = objs
+        elif mode == 'list':
+            objs = self.get_queryset()
+            context_object_name = self.get_context_object_name()
+            context.update({
+                context_object_name + '_list': objs,
+                context_object_name + '_is_paginated': False,
+                context_object_name + '_paginator': None,
+                context_object_name + '_page_obj': None,
+            })
         return context
 
     def get_template_name(self, *args, **kwargs):
