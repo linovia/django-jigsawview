@@ -48,14 +48,6 @@ class ViewMetaclass(type):
         return new_class
 
 
-class BoundPiece(object):
-
-    def __init__(self, view, piece, name):
-        self.name = name,
-        self.piece = piece
-        self.view = view
-
-
 class JigsawView(object):
 
     mode = None
@@ -78,14 +70,6 @@ class JigsawView(object):
         for name, piece in self.pieces.iteritems():
             if not piece.base_mode:
                 piece.mode = mode
-
-    def __getitem__(self, name):
-        "Returns a BoundPiece with the given name."
-        try:
-            field = self.pieces[name]
-        except KeyError:
-            raise KeyError('Key %r not found in JigsawView' % name)
-        return BoundPiece(self, field, name)
 
     def get_template_name(self):
         """

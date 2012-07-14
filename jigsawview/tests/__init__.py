@@ -110,12 +110,6 @@ class TestJigsawViewPiece(TestCase):
         self.assertEqual(view.pieces.keys(), [])
         self.assertEqual(MyView1.base_pieces.keys(), ['piece1', 'piece2'])
 
-    def test_view_contains_bound_pieces(self):
-        view = MySubView()
-        from jigsawview.views import BoundPiece
-        self.assertTrue(isinstance(view['piece2'], BoundPiece))
-        self.assertTrue(isinstance(view['piece3'], BoundPiece))
-
     def test_view_sets_piece_mode(self):
         view = MyView1()
         view.set_mode('detail')
