@@ -137,4 +137,8 @@ class JigsawView(object):
 
     def dispatch(self, request, *args, **kwargs):
         context = self.get_context_data(request, **kwargs)
+        for piece in reversed(self.pieces.values()):
+            result = piece.dispatch(request, context, self.mode)
+            if result:
+                return result
         return self.render_to_response(request, context)

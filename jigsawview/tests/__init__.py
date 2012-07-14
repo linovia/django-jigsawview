@@ -267,6 +267,60 @@ class JigsawViewTest(TestCase):
             [(o.id, type(o)) for o in MyOtherObjectModel.objects.all()]
         )
 
+    def test_update_view_context(self):
+        response = self.client.get('/object/1/update/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response=response,
+            template_name='obj_update.html')
+        self.assertEqual(
+            sorted(response.context_data.keys()),
+            sorted([
+                'obj_form', 'obj',
+                'other_paginator', 'other_page_obj',
+                'other_is_paginated', 'other_list',
+            ]))
+        self.assertEqual(
+            [(o.id, type(o)) for o in response.context_data['other_list']],
+            [(o.id, type(o)) for o in MyOtherObjectModel.objects.all()]
+        )
+        new_values = {
+            'slug': 'new_slug_value',
+            'other_slug_field': 'other_slug_value',
+        }
+        response = self.client.post('/object/1/update/', new_values)
+        self.assertRedirects(response, '/object/1/',
+            target_status_code=200)
+        obj = MyObjectModel.objects.get(id=1)
+        for k, v in new_values.items():
+            self.assertEqual(getattr(obj, k), v)
+
+    def test_new_view_context(self):
+        response = self.client.get('/object/new/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response=response,
+            template_name='obj_new.html')
+        self.assertEqual(
+            sorted(response.context_data.keys()),
+            sorted([
+                'obj_form',
+                'other_paginator', 'other_page_obj',
+                'other_is_paginated', 'other_list',
+            ]))
+        self.assertEqual(
+            [(o.id, type(o)) for o in response.context_data['other_list']],
+            [(o.id, type(o)) for o in MyOtherObjectModel.objects.all()]
+        )
+        new_values = {
+            'slug': 'new_slug_value',
+            'other_slug_field': 'other_slug_value',
+        }
+        response = self.client.post('/object/new/', new_values)
+        self.assertRedirects(response, '/object/3/',
+            target_status_code=200)
+        obj = MyObjectModel.objects.get(id=3)
+        for k, v in new_values.items():
+            self.assertEqual(getattr(obj, k), v)
+
 #
 # OBJECT PIECE TESTS
 #

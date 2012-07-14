@@ -5,8 +5,8 @@ Object related piece
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.http import Http404
 from django.utils.translation import ugettext as _
-from django.utils.encoding import smart_str
 from django.forms import models as model_forms
+from django.http import HttpResponseRedirect
 
 
 from jigsawview.pieces.base import Piece
@@ -151,6 +151,27 @@ class ObjectPiece(Piece):
             args['instance'] = kwargs['instance']
         return args
 
+    def form_valid(self, form):
+        obj = form.save()
+        return HttpResponseRedirect(self.get_success_url(obj=obj))
+
+    def form_invalid(self, form):
+        return
+
+    def get_success_url(self, obj=None):
+        if self.success_url:
+            url = self.success_url
+            if obj:
+                url = self.success_url % obj.__dict__
+        else:
+            try:
+                url = obj.get_absolute_url()
+            except AttributeError:
+                raise ImproperlyConfigured(
+                    "No URL to redirect to.  Either provide a url or define"
+                    " a get_absolute_url method on the Model.")
+        return url
+
     #
     # Generic members
     #
@@ -180,6 +201,17 @@ class ObjectPiece(Piece):
             form = self.get_form(request)
             context[context_object_name + '_form'] = form
         return context
+
+    def dispatch(self, request, context, mode):
+        mode = self.mode or mode
+        if mode in ('update', 'new'):
+            form_name = self.get_context_object_name() + '_form'
+            form = context[form_name]
+            if form.is_valid():
+                return self.form_valid(form)
+            else:
+                return self.form_invalid(form)
+        return
 
     def get_template_name(self, *args, **kwargs):
         return u'%s_%s' % (self.view_name, self.mode)
