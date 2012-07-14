@@ -170,12 +170,14 @@ class ObjectPiece(Piece):
                 context_object_name + '_paginator': None,
                 context_object_name + '_page_obj': None,
             })
+        elif mode == 'new':
+            context_object_name = self.get_context_object_name()
 
         if mode == 'update':
             form = self.get_form(request, instance=obj)
             context[context_object_name + '_form'] = form
         elif mode == 'new':
-            form = self.get_form()
+            form = self.get_form(request)
             context[context_object_name + '_form'] = form
         return context
 
