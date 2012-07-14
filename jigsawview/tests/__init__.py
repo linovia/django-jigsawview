@@ -300,5 +300,37 @@ class ObjectPieceTest(TestCase):
         self.assertTrue(isinstance(obj, MyObjectModel))
         self.assertEqual(obj.id, 1)
 
-    # def test_(self):
-    #     pass
+    def test_get_context_data_in_detail_mode(self):
+        rf = RequestFactory()
+        object_view = MyObjectPiece()
+        object_view.view_name = 'my_object'
+        request = rf.get('object/1/')
+        context = {'demo': True}
+        context = object_view.get_context_data(
+            request, context, 'detail', pk=1)
+        self.assertEqual(len(context), 2)
+        # Test the previous context wasn't discarded
+        self.assertTrue('demo' in context)
+        self.assertEqual(context['demo'], True)
+        # Test the context addition
+        self.assertTrue('my_object' in context)
+        self.assertEqual(context['my_object'].id, 1)
+
+    def test_get_context_data_in_list_mode(self):
+        rf = RequestFactory()
+        object_view = MyObjectPiece()
+        object_view.view_name = 'my_object'
+        request = rf.get('objects')
+        context = {'demo': True}
+        context = object_view.get_context_data(
+            request, context, 'list')
+        self.assertEqual(len(context), 5)
+        # Test the previous context wasn't discarded
+        self.assertTrue('demo' in context)
+        self.assertEqual(context['demo'], True)
+        # Test the context addition
+        self.assertTrue('my_object_list' in context)
+        self.assertEqual(len(context['my_object_list']), 2)
+        self.assertTrue('my_object_is_paginated' in context)
+        self.assertTrue('my_object_page_obj' in context)
+        self.assertTrue('my_object_paginator' in context)
