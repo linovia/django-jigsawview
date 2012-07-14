@@ -2,6 +2,8 @@
 Unit tests for the jigsawview application
 """
 
+from mock import Mock
+
 # from unittest2 import TestCase
 from django.test import TestCase
 from django.test import RequestFactory
@@ -11,7 +13,7 @@ from jigsawview.pieces import Piece
 from jigsawview.views import JigsawView
 
 from jigsawview.tests.models import MyObjectModel, MyOtherObjectModel
-from jigsawview.tests.views import SingleObjectView, MyObjectPiece
+from jigsawview.tests.views import MyObjectPiece
 
 #
 # Various test Pieces and View definitions
@@ -333,31 +335,31 @@ class ObjectPieceTest(TestCase):
     def test_get_object_with_no_arguments_raises_an_exception(self):
         object_view = MyObjectPiece(mode='detail')
         with self.assertRaises(AttributeError):
-            object_view.get_object()
+            object_view.get_object(request=Mock(), context={})
 
     def test_get_object_by_pk(self):
         object_view = MyObjectPiece(mode='detail')
-        obj = object_view.get_object(pk='1')
+        obj = object_view.get_object(request=Mock(), context={}, pk='1')
         self.assertTrue(isinstance(obj, MyObjectModel))
         self.assertEqual(obj.id, 1)
 
     def test_get_object_with_different_pk(self):
         object_view = MyObjectPiece(mode='detail')
         object_view.pk_url_kwarg = 'obj_id'
-        obj = object_view.get_object(obj_id='1')
+        obj = object_view.get_object(request=Mock(), context={}, obj_id='1')
         self.assertTrue(isinstance(obj, MyObjectModel))
         self.assertEqual(obj.id, 1)
 
     def test_get_object_by_slug(self):
         object_view = MyObjectPiece(mode='detail')
-        obj = object_view.get_object(slug='object_1')
+        obj = object_view.get_object(request=Mock(), context={}, slug='object_1')
         self.assertTrue(isinstance(obj, MyObjectModel))
         self.assertEqual(obj.id, 1)
 
     def test_get_object_by_custom_url_slug(self):
         object_view = MyObjectPiece(mode='detail')
         object_view.slug_url_kwarg = "name"
-        obj = object_view.get_object(name='object_1')
+        obj = object_view.get_object(request=Mock(), context={}, name='object_1')
         self.assertTrue(isinstance(obj, MyObjectModel))
         self.assertEqual(obj.id, 1)
 
@@ -365,7 +367,7 @@ class ObjectPieceTest(TestCase):
         object_view = MyObjectPiece(mode='detail')
         object_view.slug_field = "other_slug_field"
         object_view.slug_url_kwarg = "name"
-        obj = object_view.get_object(name='other_object_1')
+        obj = object_view.get_object(request=Mock(), context={}, name='other_object_1')
         self.assertTrue(isinstance(obj, MyObjectModel))
         self.assertEqual(obj.id, 1)
 

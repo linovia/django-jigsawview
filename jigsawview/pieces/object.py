@@ -29,7 +29,7 @@ class ObjectPiece(Piece):
     # Single object management
     #
 
-    def get_object(self, queryset=None, **kwargs):
+    def get_object(self, request, context, queryset=None, **kwargs):
         """
         Returns the object the view is displaying.
 
@@ -39,7 +39,7 @@ class ObjectPiece(Piece):
         # Use a custom queryset if provided; this is required for subclasses
         # like DateDetailView
         if queryset is None:
-            queryset = self.get_queryset()
+            queryset = self.get_queryset(request, context)
 
         # Next, try looking up by primary key.
         pk = kwargs.get(self.pk_url_kwarg, None)
@@ -81,7 +81,7 @@ class ObjectPiece(Piece):
     # Queryset
     #
 
-    def get_queryset(self):
+    def get_queryset(self, request, context):
         """
         Get the queryset to look an object up against. May not be called if
         `get_object` is overridden.
@@ -179,11 +179,11 @@ class ObjectPiece(Piece):
     def get_context_data(self, request, context, mode, **kwargs):
         mode = self.mode or mode
         if mode in ('detail', 'update', 'delete'):
-            obj = self.get_object(**kwargs)
+            obj = self.get_object(request, context, **kwargs)
             context_object_name = self.get_context_object_name(obj)
             context[context_object_name] = obj
         elif mode == 'list':
-            objs = self.get_queryset()
+            objs = self.get_queryset(request, context)
             context_object_name = self.get_context_object_name()
             context.update({
                 context_object_name + '_list': objs,
