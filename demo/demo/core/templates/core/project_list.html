@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block menu_content %}
+<a class="brand" href="#">Demo project</a>
+<div class="nav-collapse">
+    <ul class="nav">
+        <li class="active"><a href="{% url projects %}">Projects</a></li>
+    </ul>
+</div><!--/.nav-collapse -->
+{% endblock menu_content %}
+
+
+{% block container %}
+<h1>Project list</h1>
+
+<table class="table table-bordered table-striped">
+    <colgroup>
+        <col class="span1">
+        <col class="span7">
+    </colgroup>
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th>Header</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        {% for project in project_list %}
+        <tr>
+            <td>
+                <a href="{% url project project.id %}">{{ project.name }}</a>
+            </td>
+            <td>
+                <a href="{% url update-project project.id %}">edit</a>
+            </td>
+        </tr>
+        {% endfor %}
+
+    </tbody>
+</table>
+
+<a class="btn btn-primary" href="{% url new-project %}">Add a project</a>
+
+{% endblock container %}
