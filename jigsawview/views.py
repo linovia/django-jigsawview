@@ -67,13 +67,7 @@ class JigsawView(object):
     __metaclass__ = ViewMetaclass
 
     def __init__(self, mode=None):
-        self.set_mode(mode)
-
-    def set_mode(self, mode):
         self.mode = mode
-        for name, piece in self.pieces.iteritems():
-            if not piece.base_mode:
-                piece.mode = mode
 
     def get_template_name(self):
         """
@@ -86,7 +80,8 @@ class JigsawView(object):
             return u'%s%s.html' % (self.template_name_prefix, self.mode)
 
         for piece_name, piece in reversed(self.pieces.items()):
-            result = piece.get_template_name()
+            mode = piece.get_mode(self.mode, piece_name not in self.base_pieces)
+            result = piece.get_template_name(mode=mode)
             if result:
                 return u'%s.html' % result
 
@@ -98,7 +93,8 @@ class JigsawView(object):
         """
         context = {}
         for piece_name, piece in self.pieces.items():
-            context = piece.get_context_data(request, context, self.mode, **kwargs)
+            mode = piece.get_mode(self.mode, piece_name not in self.base_pieces)
+            context = piece.get_context_data(request, context, mode, **kwargs)
         return context
 
     @classonlymethod
@@ -141,8 +137,9 @@ class JigsawView(object):
 
     def dispatch(self, request, *args, **kwargs):
         context = self.get_context_data(request, **kwargs)
-        for piece in reversed(self.pieces.values()):
-            result = piece.dispatch(request, context, self.mode)
+        for piece_name, piece in reversed(self.pieces.items()):
+            mode = piece.get_mode(self.mode, piece_name not in self.base_pieces)
+            result = piece.dispatch(request, context, mode)
             if result:
                 return result
         return self.render_to_response(request, context)

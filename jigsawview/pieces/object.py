@@ -213,5 +213,5 @@ class ObjectPiece(Piece):
                 return self.form_invalid(form)
         return
 
-    def get_template_name(self, *args, **kwargs):
-        return u'%s_%s' % (self.view_name, self.mode)
+    def get_template_name(self, mode, *args, **kwargs):
+        return u'%s_%s' % (self.view_name, mode)

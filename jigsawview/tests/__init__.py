@@ -63,9 +63,8 @@ class MySubView2(MyView2):
     piece3 = MyPiece1()
 
 
-class MyView3(JigsawView):
-    piece1 = MyPiece1(mode='list')
-    piece2 = MyPiece2()
+class MyView4(JigsawView):
+    piece1 = MyPiece1(default_mode='list')
 
 
 class DiscardContextView(MyView1):
@@ -116,21 +115,27 @@ class TestJigsawViewPiece(TestCase):
         self.assertEqual(view.pieces.keys(), [])
         self.assertEqual(MyView1.base_pieces.keys(), ['piece1', 'piece2'])
 
-    def test_view_sets_piece_mode(self):
-        view = MyView1()
-        view.set_mode('detail')
-        self.assertEqual(view.pieces['piece1'].mode, 'detail')
-        view.set_mode('list')
-        self.assertEqual(view.pieces['piece1'].mode, 'list')
+    def test_use_view_mode_by_default(self):
+        piece1 = MyPiece1()
+        # When the piece is part of the class
+        self.assertEqual(piece1.get_mode('detail', False), 'detail')
+        # When the piece in inherited
+        self.assertEqual(piece1.get_mode('detail', True), 'detail')
 
-    def test_view_sets_piece_mode_unless_piece_has_explicit_mode(self):
-        view = MyView3()
-        view.set_mode('detail')
-        self.assertEqual(view.pieces['piece1'].mode, 'list')
-        self.assertEqual(view.pieces['piece2'].mode, 'detail')
-        view.set_mode('list')
-        self.assertEqual(view.pieces['piece1'].mode, 'list')
-        self.assertEqual(view.pieces['piece2'].mode, 'list')
+    def test_piece_mode_takes_over_view_mode(self):
+        piece1 = MyPiece1(mode='list')
+        # When the piece is part of the class
+        self.assertEqual(piece1.get_mode('detail', False), 'list')
+        # When the piece in inherited
+        self.assertEqual(piece1.get_mode('detail', True), 'list')
+
+    def test_piece_default_mode_is_overriden_if_piece_is_not_inherited(self):
+        piece1 = MyPiece1(default_mode='list')
+        self.assertEqual(piece1.get_mode('detail', False), 'detail')
+
+    def test_piece_default_mode_is_overriden_by_view_mode_if_piece_is_not_inherited(self):
+        piece1 = MyPiece1(default_mode='list')
+        self.assertEqual(piece1.get_mode('detail', True), 'list')
 
 
 class TestJigsawTemplateRendering(TestCase):
@@ -152,7 +157,7 @@ class TestJigsawTemplateRendering(TestCase):
         template_name = self.template_strings['name']
         template_prefix = self.template_strings['prefix']
         view = MyView1()
-        view.set_mode('list')
+        view.mode = 'list'
         view.template_name = template_name
         view.template_name_prefix = template_prefix
         result = view.get_template_name()
@@ -162,32 +167,32 @@ class TestJigsawTemplateRendering(TestCase):
         template_prefix = self.template_strings['prefix']
 
         view = MyView1()
-        view.set_mode('list')
+        view.mode = 'list'
         view.template_name_prefix = template_prefix
         result = view.get_template_name()
         self.assertEqual(result, template_prefix + 'list.html')
 
         view = MyView1()
-        view.set_mode('detail')
+        view.mode = 'detail'
         view.template_name_prefix = template_prefix
         result = view.get_template_name()
         self.assertEqual(result, template_prefix + 'detail.html')
 
     def test_use_not_null_piece_template_name(self):
         view = MyView1()
-        view.set_mode('list')
+        view.mode = 'list'
         self.assertEqual(
             view.get_template_name(),
             'my_piece_list.html')
 
         view = MyView1()
-        view.set_mode('detail')
+        view.mode = 'detail'
         self.assertEqual(
             view.get_template_name(),
             'my_piece_detail.html')
 
         view = MyView2()
-        view.set_mode('list')
+        view.mode = 'list'
         self.assertEqual(
             view.get_template_name(),
             'my_piece_list.html')
@@ -210,12 +215,12 @@ class TestJigsawTemplateRendering(TestCase):
 
     def test_get_context_data_can_depend_on_mode(self):
         view = ContextDependsOnModeView()
-        view.set_mode('list')
+        view.mode = 'list'
         self.assertEqual(view.get_context_data(None), {
             'list': True,
             'my_piece_1': 'azerty',
         })
-        view.set_mode('detail')
+        view.mode = 'detail'
         self.assertEqual(view.get_context_data(None), {
             'detail': True,
             'my_piece_1': 'azerty',

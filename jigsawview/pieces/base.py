@@ -29,12 +29,24 @@ class Piece(BasePiece):
         self.default_mode = default_mode
         super(Piece, self).__init__(*args, **kwargs)
 
-    def get_template_name(self, *args, **kwargs):
+    def get_template_name(self, mode, *args, **kwargs):
+        """
+        Give the desired template name for this piece
+        """
         if self.template_name:
             return u'%s' % self.template_name
         if self.template_name_prefix:
-            return u'%s_%s' % (self.template_name_prefix, self.mode)
+            return u'%s_%s' % (self.template_name_prefix, mode)
         return None
 
     def get_context_data(self, request, context, mode, *args, **kwargs):
+        """
+        Compute the view context for this piece.
+        """
         return context
+
+    def get_mode(self, mode, is_herited):
+        """
+        Return which mode this piece should be using
+        """
+        return self.mode or (is_herited and self.default_mode) or mode
