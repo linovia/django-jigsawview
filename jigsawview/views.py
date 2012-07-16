@@ -26,6 +26,10 @@ def get_declared_pieces(bases, attrs):
         for piece_name, obj in attrs.items() if isinstance(obj, Piece)]
     pieces.sort(key=lambda x: x[1].creation_counter)
 
+    # Push the name instance back to the piece
+    for name, piece in pieces:
+        piece.view_name = name
+
     # If this class is subclassing another View, add that View's pieces.
     # Note that we loop over the bases in *reverse*. This is necessary in
     # order to preserve the correct order of fields.
@@ -42,8 +46,10 @@ class ViewMetaclass(type):
     """
 
     def __new__(cls, name, bases, attrs):
-        attrs['base_pieces'] = get_declared_pieces(bases, attrs)
-        attrs['pieces'] = copy.copy(attrs['base_pieces'])
+        original_attrs = copy.copy(attrs)
+        attrs['pieces'] = get_declared_pieces(bases, attrs)
+        attrs['base_pieces'] = SortedDict([(k, v)
+            for k, v in attrs['pieces'].iteritems() if k in original_attrs])
         new_class = super(ViewMetaclass, cls).__new__(cls, name, bases, attrs)
         return new_class
 
@@ -62,8 +68,6 @@ class JigsawView(object):
 
     def __init__(self, mode=None):
         self.set_mode(mode)
-        for name, piece in self.pieces.iteritems():
-            piece.view_name = name
 
     def set_mode(self, mode):
         self.mode = mode

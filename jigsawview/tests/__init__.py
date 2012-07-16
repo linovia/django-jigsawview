@@ -94,13 +94,17 @@ class TestJigsawViewPiece(TestCase):
         self.assertEqual(MyView1.base_pieces.keys(), ['piece1', 'piece2'])
         self.assertEqual(MyView2.base_pieces.keys(), ['piece2', 'piece1'])
 
+    def test_base_pieces(self):
+        self.assertEqual(MySubView.base_pieces.keys(), ['piece3'])
+        self.assertEqual(MySubView2.base_pieces.keys(), ['piece3'])
+
     def test_view_keep_pieces_ordered_when_subclassed(self):
         self.assertEqual(
-            MySubView.base_pieces.keys(),
+            MySubView.pieces.keys(),
             ['piece1', 'piece2', 'piece3']
         )
         self.assertEqual(
-            MySubView2.base_pieces.keys(),
+            MySubView2.pieces.keys(),
             ['piece2', 'piece1', 'piece3']
         )
 
