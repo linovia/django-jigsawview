@@ -153,6 +153,7 @@ class ObjectPiece(Piece):
 
     def form_valid(self, form):
         obj = form.save()
+        print self
         return HttpResponseRedirect(self.get_success_url(obj=obj))
 
     def form_invalid(self, form):
