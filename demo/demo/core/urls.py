@@ -13,7 +13,7 @@ bug_urlpatterns = patterns('',
     url(r'^(?P<bug_id>\d+)/$',
         BugView.as_view(mode='detail'),
         name='bug'),
-    url(r'^update/$',
+    url(r'^(?P<bug_id>\d+)/update/$',
         BugView.as_view(mode='update'),
         name='update-bug'),
 )

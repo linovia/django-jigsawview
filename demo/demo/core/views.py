@@ -34,8 +34,8 @@ class BugMixin(ObjectPiece):
     model = Bug
     pk_url_kwarg = 'bug_id'
 
-    def get_success_url(self):
-        return reverse('bugs', kwargs={'project_id': self.project.id})
+    def get_success_url(self, obj=None):
+        return reverse('bugs', kwargs={'project_id': obj.project.id})
 
     def get_queryset(self, request, context):
         # Limits the bugs to the current project's ones
