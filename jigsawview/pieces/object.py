@@ -213,4 +213,11 @@ class ObjectPiece(Piece):
         return
 
     def get_template_name(self, *args, **kwargs):
+        app_name = None
+        if self.model:
+            app_name = self.model._meta.app_label
+        if hasattr(self, 'object') and self.object:
+            app_name = type(self.object)._meta.app_label
+        if app_name:
+            return u'%s/%s_%s' % (app_name, self.view_name, self.mode)
         return u'%s_%s' % (self.view_name, self.mode)

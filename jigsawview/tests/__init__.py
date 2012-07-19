@@ -241,7 +241,7 @@ class JigsawViewTest(TestCase):
         response = self.client.get('/object/1/')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response=response,
-            template_name='obj_detail.html')
+            template_name='tests/obj_detail.html')
         self.assertEqual(
             sorted(response.context_data.keys()),
             sorted(['obj', 'other_paginator', 'other_page_obj',
@@ -260,7 +260,7 @@ class JigsawViewTest(TestCase):
         response = self.client.get('/objects/')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response=response,
-            template_name='obj_list.html')
+            template_name='tests/obj_list.html')
         self.assertEqual(
             sorted(response.context_data.keys()),
             sorted([
@@ -282,7 +282,7 @@ class JigsawViewTest(TestCase):
         response = self.client.get('/object/1/update/')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response=response,
-            template_name='obj_update.html')
+            template_name='tests/obj_update.html')
         self.assertEqual(
             sorted(response.context_data.keys()),
             sorted([
@@ -309,7 +309,7 @@ class JigsawViewTest(TestCase):
         response = self.client.get('/object/new/')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response=response,
-            template_name='obj_new.html')
+            template_name='tests/obj_new.html')
         self.assertEqual(
             sorted(response.context_data.keys()),
             sorted([
