@@ -10,7 +10,7 @@ from django.utils.datastructures import SortedDict
 from django.utils.decorators import classonlymethod
 from django.template.response import TemplateResponse
 
-from jigsawview.pieces import Piece
+from jigsawview.pieces import UnboundPiece
 
 # Monkey patch SortedDict to work with copy
 if not hasattr(SortedDict, '__copy__'):
@@ -23,12 +23,8 @@ def get_declared_pieces(bases, attrs):
     similar piece in the base classes (in 'bases').
     """
     pieces = [(piece_name, attrs.pop(piece_name))
-        for piece_name, obj in attrs.items() if isinstance(obj, Piece)]
+        for piece_name, obj in attrs.items() if isinstance(obj, UnboundPiece)]
     pieces.sort(key=lambda x: x[1].creation_counter)
-
-    # Push the name instance back to the piece
-    for name, piece in pieces:
-        piece.view_name = name
 
     # If this class is subclassing another View, add that View's pieces.
     # Note that we loop over the bases in *reverse*. This is necessary in
@@ -66,8 +62,14 @@ class JigsawView(object):
 
     __metaclass__ = ViewMetaclass
 
-    def __init__(self, mode=None):
+    def __init__(self, mode):
         self.mode = mode
+        for name, unbound_piece in self.pieces.iteritems():
+            piece = unbound_piece(
+                view_mode=mode,
+                inherited_piece=(name not in self.base_pieces),
+                view_name=name)
+            setattr(self, name, piece)
 
     def get_template_name(self):
         """
@@ -79,9 +81,9 @@ class JigsawView(object):
         if self.template_name_prefix:
             return u'%s%s.html' % (self.template_name_prefix, self.mode)
 
-        for piece_name, piece in reversed(self.pieces.items()):
-            mode = piece.get_mode(self.mode, piece_name not in self.base_pieces)
-            result = piece.get_template_name(mode=mode)
+        for piece_name in reversed(self.pieces.keys()):
+            piece = getattr(self, piece_name)
+            result = piece.get_template_name()
             if result:
                 return u'%s.html' % result
 
@@ -92,9 +94,9 @@ class JigsawView(object):
         Returns all the aggregated contexes from the pieces.
         """
         context = {}
-        for piece_name, piece in self.pieces.items():
-            mode = piece.get_mode(self.mode, piece_name not in self.base_pieces)
-            context = piece.get_context_data(request, context, mode, **kwargs)
+        for piece_name in self.pieces.keys():
+            piece = getattr(self, piece_name)
+            context = piece.get_context_data(context, **kwargs)
         return context
 
     @classonlymethod
@@ -136,10 +138,15 @@ class JigsawView(object):
         )
 
     def dispatch(self, request, *args, **kwargs):
+        for piece_name in reversed(self.pieces.keys()):
+            piece = getattr(self, piece_name)
+            for k, v in kwargs:
+                setattr(piece, k, v)
+            piece.request = request
         context = self.get_context_data(request, **kwargs)
-        for piece_name, piece in reversed(self.pieces.items()):
-            mode = piece.get_mode(self.mode, piece_name not in self.base_pieces)
-            result = piece.dispatch(request, context, mode)
+        for piece_name in reversed(self.pieces.keys()):
+            piece = getattr(self, piece_name)
+            result = piece.dispatch(context)
             if result:
                 return result
         return self.render_to_response(request, context)
