@@ -296,6 +296,17 @@ class JigsawViewTest(TestCase):
         for k, v in new_values.items():
             self.assertEqual(getattr(obj, k), v)
 
+    def test_failing_update_view_context(self):
+        response = self.client.get('/object/1/update/')
+        new_values = {
+            'slug': 'new_slug_value',
+        }
+        response = self.client.post('/object/1/update/', new_values)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response=response,
+            template_name='obj_update.html')
+        self.assertFormError(response, 'obj_form', 'other_slug_field', u'This field is required.')
+
     def test_new_view_context(self):
         response = self.client.get('/object/new/')
         self.assertEqual(response.status_code, 200)
