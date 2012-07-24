@@ -1,1 +1,2 @@
-nosetests --cover-html --with-coverage --cover-package=jigsawview
+coverage run --include="jigsawview/*"  --omit="jigsawview/tests/*" runtests.py ; coverage html
+
