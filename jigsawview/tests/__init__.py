@@ -313,7 +313,7 @@ class JigsawViewTest(TestCase):
         response = self.client.post('/object/1/update/', new_values)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response=response,
-            template_name='obj_update.html')
+            template_name='tests/obj_update.html')
         self.assertFormError(response, 'obj_form', 'other_slug_field', u'This field is required.')
 
     def test_new_view_context(self):
