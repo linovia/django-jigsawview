@@ -4,12 +4,13 @@ Unit tests for the jigsawview application
 
 from mock import Mock
 
-# from unittest2 import TestCase
 from django.test import TestCase
 from django.test import RequestFactory
 
+from django import forms
 
-from jigsawview.pieces import Piece
+
+from jigsawview.pieces import Piece, FormPiece
 from jigsawview.views import JigsawView
 
 from jigsawview.tests.models import MyObjectModel, MyOtherObjectModel
@@ -343,6 +344,7 @@ class JigsawViewTest(TestCase):
         for k, v in new_values.items():
             self.assertEqual(getattr(obj, k), v)
 
+
 #
 # OBJECT PIECE TESTS
 #
@@ -473,3 +475,70 @@ class ObjectPieceTest(TestCase):
         self.assertEqual(
             context['my_object_form']['other_slug_field'].value(),
             None)
+
+
+#
+# FORM PIECE TESTS
+#
+
+class TestForm(forms.Form):
+    name = forms.CharField(max_length=32)
+    description = forms.CharField(max_length=32)
+
+
+class MyFormPiece(FormPiece):
+    form_class = TestForm
+
+    def __init__(self, *args, **kwargs):
+        super(MyFormPiece, self).__init__(*args, **kwargs)
+        self.form_is_valid = False
+        self.form_is_invalid = False
+
+    def form_valid(self, form):
+        self.form_is_valid = True
+
+    def form_invalid(self, form):
+        self.form_is_invalid = True
+
+
+class FormPieceTest(TestCase):
+
+    def test_form_in_context(self):
+        rf = RequestFactory()
+        form_piece = MyFormPiece(bound=True, mode='detail')
+        form_piece.view_name = 'login'
+        form_piece.request = rf.get('login/')
+        context = form_piece.get_context_data({'demo': True})
+        self.assertEqual(len(context), 2)
+        # Test the previous context wasn't discarded
+        self.assertTrue('demo' in context)
+        self.assertEqual(context['demo'], True)
+        # Test the form is here
+        self.assertTrue('login_form' in context)
+        self.assertTrue(isinstance(context['login_form'], forms.Form))
+
+    def test_valid_form(self):
+        rf = RequestFactory()
+        form_piece = MyFormPiece(bound=True, mode='detail')
+        form_piece.view_name = 'login'
+        form_piece.request = rf.post('login/', {
+            'name': 'Xavier Ordoquy',
+            'description': 'Django and Python developer',
+        })
+        context = form_piece.get_context_data({'demo': True})
+        form_piece.dispatch(context)
+        self.assertTrue(form_piece.form_is_valid)
+        self.assertFalse(form_piece.form_is_invalid)
+
+    def test_invalid_form(self):
+        rf = RequestFactory()
+        form_piece = MyFormPiece(bound=True, mode='detail')
+        form_piece.view_name = 'login'
+        form_piece.request = rf.post('login/', {
+            'name': 'Xavier Ordoquy',
+        })
+        context = form_piece.get_context_data({'demo': True})
+        form_piece.dispatch(context)
+        self.assertFalse(form_piece.form_is_valid)
+        self.assertTrue(form_piece.form_is_invalid)
+        self.assertTrue(context['login_form'].errors)
