@@ -13,7 +13,7 @@ from jigsawview.pieces import Piece
 from jigsawview.views import JigsawView
 
 from jigsawview.tests.models import MyObjectModel, MyOtherObjectModel
-from jigsawview.tests.views import MyObjectPiece
+from jigsawview.tests.views import MyObjectPiece, ObjectView
 
 #
 # Various test Pieces and View definitions
@@ -23,7 +23,7 @@ from jigsawview.tests.views import MyObjectPiece
 class MyPiece1(Piece):
     template_name_prefix = 'my_piece'
 
-    def get_context_data(self, request, context, *args, **kwargs):
+    def get_context_data(self, context, *args, **kwargs):
         context['my_piece_1'] = 'azerty'
         return context
 
@@ -33,14 +33,14 @@ class MyPiece2(Piece):
 
 
 class DiscardContextPiece(Piece):
-    def get_context_data(self, request, context, *args, **kwargs):
+    def get_context_data(self, context, *args, **kwargs):
         return {}
 
 
 class ContextDependsOnModePiece(Piece):
-    def get_context_data(self, request, context, mode, *args, **kwargs):
+    def get_context_data(self, context, *args, **kwargs):
         context.update({
-            mode: True,
+            self.mode: True,
         })
         return context
 
@@ -63,9 +63,8 @@ class MySubView2(MyView2):
     piece3 = MyPiece1()
 
 
-class MyView3(JigsawView):
-    piece1 = MyPiece1(mode='list')
-    piece2 = MyPiece2()
+class MyView4(JigsawView):
+    piece1 = MyPiece1(default_mode='list')
 
 
 class DiscardContextView(MyView1):
@@ -94,39 +93,51 @@ class TestJigsawViewPiece(TestCase):
         self.assertEqual(MyView1.base_pieces.keys(), ['piece1', 'piece2'])
         self.assertEqual(MyView2.base_pieces.keys(), ['piece2', 'piece1'])
 
+    def test_base_pieces(self):
+        self.assertEqual(MySubView.base_pieces.keys(), ['piece3'])
+        self.assertEqual(MySubView2.base_pieces.keys(), ['piece3'])
+
     def test_view_keep_pieces_ordered_when_subclassed(self):
         self.assertEqual(
-            MySubView.base_pieces.keys(),
+            MySubView.pieces.keys(),
             ['piece1', 'piece2', 'piece3']
         )
         self.assertEqual(
-            MySubView2.base_pieces.keys(),
+            MySubView2.pieces.keys(),
             ['piece2', 'piece1', 'piece3']
         )
 
     def test_changing_the_instance_pieces_does_not_affect_the_class(self):
-        view = MyView1()
+        view = MyView1(mode='detail')
         self.assertEqual(view.pieces.keys(), ['piece1', 'piece2'])
         from django.utils.datastructures import SortedDict
         view.pieces = SortedDict()
         self.assertEqual(view.pieces.keys(), [])
         self.assertEqual(MyView1.base_pieces.keys(), ['piece1', 'piece2'])
 
-    def test_view_sets_piece_mode(self):
-        view = MyView1()
-        view.set_mode('detail')
-        self.assertEqual(view.pieces['piece1'].mode, 'detail')
-        view.set_mode('list')
-        self.assertEqual(view.pieces['piece1'].mode, 'list')
+    def test_use_view_mode_by_default(self):
+        # When the piece is part of the class
+        piece1 = MyPiece1(bound=True, view_mode='detail', inherited_piece=False)
+        self.assertEqual(piece1.mode, 'detail')
+        # When the piece in inherited
+        piece1 = MyPiece1(bound=True, view_mode='detail', inherited_piece=True)
+        self.assertEqual(piece1.mode, 'detail')
 
-    def test_view_sets_piece_mode_unless_piece_has_explicit_mode(self):
-        view = MyView3()
-        view.set_mode('detail')
-        self.assertEqual(view.pieces['piece1'].mode, 'list')
-        self.assertEqual(view.pieces['piece2'].mode, 'detail')
-        view.set_mode('list')
-        self.assertEqual(view.pieces['piece1'].mode, 'list')
-        self.assertEqual(view.pieces['piece2'].mode, 'list')
+    def test_piece_mode_takes_over_view_mode(self):
+        # When the piece is part of the class
+        piece1 = MyPiece1(bound=True, mode='list', view_mode='detail', inherited_piece=False)
+        self.assertEqual(piece1.mode, 'list')
+        # When the piece in inherited
+        piece1 = MyPiece1(bound=True, mode='list', view_mode='detail', inherited_piece=True)
+        self.assertEqual(piece1.mode, 'list')
+
+    def test_piece_default_mode_is_overriden_if_piece_is_not_inherited(self):
+        piece1 = MyPiece1(bound=True, default_mode='list', view_mode='detail', inherited_piece=False)
+        self.assertEqual(piece1.mode, 'detail')
+
+    def test_piece_default_mode_is_overriden_by_view_mode_if_piece_is_not_inherited(self):
+        piece1 = MyPiece1(bound=True, default_mode='list', view_mode='detail', inherited_piece=True)
+        self.assertEqual(piece1.mode, 'list')
 
 
 class TestJigsawTemplateRendering(TestCase):
@@ -139,7 +150,7 @@ class TestJigsawTemplateRendering(TestCase):
 
     def test_template_name(self):
         template_name = self.template_strings['name']
-        view = MyView1()
+        view = MyView1(mode='detail')
         view.template_name = template_name
         result = view.get_template_name()
         self.assertEqual(result, template_name)
@@ -147,8 +158,7 @@ class TestJigsawTemplateRendering(TestCase):
     def test_template_name_preceed_template_prefix_or_pieces(self):
         template_name = self.template_strings['name']
         template_prefix = self.template_strings['prefix']
-        view = MyView1()
-        view.set_mode('list')
+        view = MyView1(mode='list')
         view.template_name = template_name
         view.template_name_prefix = template_prefix
         result = view.get_template_name()
@@ -157,62 +167,56 @@ class TestJigsawTemplateRendering(TestCase):
     def test_template_prefix(self):
         template_prefix = self.template_strings['prefix']
 
-        view = MyView1()
-        view.set_mode('list')
+        view = MyView1(mode='list')
         view.template_name_prefix = template_prefix
         result = view.get_template_name()
         self.assertEqual(result, template_prefix + 'list.html')
 
-        view = MyView1()
-        view.set_mode('detail')
+        view = MyView1(mode='detail')
         view.template_name_prefix = template_prefix
         result = view.get_template_name()
         self.assertEqual(result, template_prefix + 'detail.html')
 
     def test_use_not_null_piece_template_name(self):
-        view = MyView1()
-        view.set_mode('list')
+        view = MyView1(mode='list')
         self.assertEqual(
             view.get_template_name(),
             'my_piece_list.html')
 
-        view = MyView1()
-        view.set_mode('detail')
+        view = MyView1(mode='detail')
         self.assertEqual(
             view.get_template_name(),
             'my_piece_detail.html')
 
-        view = MyView2()
-        view.set_mode('list')
+        view = MyView2(mode='list')
         self.assertEqual(
             view.get_template_name(),
             'my_piece_list.html')
 
     def test_basic_context(self):
-        view = MyView1()
+        view = MyView1(mode='detail')
         self.assertEqual(
-            view.get_context_data(None), {
+            view.get_context_data({}), {
                 'my_piece_1': 'azerty',
         })
-        view = MyView2()
+        view = MyView2(mode='detail')
         self.assertEqual(
-            view.get_context_data(None), {
+            view.get_context_data({}), {
                 'my_piece_1': 'azerty',
         })
 
     def test_get_context_data_can_discard_context_data(self):
-        view = DiscardContextView()
-        self.assertEqual(view.get_context_data(None), {})
+        view = DiscardContextView(mode='detail')
+        self.assertEqual(view.get_context_data({}), {})
 
     def test_get_context_data_can_depend_on_mode(self):
-        view = ContextDependsOnModeView()
-        view.set_mode('list')
-        self.assertEqual(view.get_context_data(None), {
+        view = ContextDependsOnModeView(mode='list')
+        self.assertEqual(view.get_context_data({}), {
             'list': True,
             'my_piece_1': 'azerty',
         })
-        view.set_mode('detail')
-        self.assertEqual(view.get_context_data(None), {
+        view = ContextDependsOnModeView(mode='detail')
+        self.assertEqual(view.get_context_data({}), {
             'detail': True,
             'my_piece_1': 'azerty',
         })
@@ -228,11 +232,16 @@ class JigsawViewTest(TestCase):
     fixtures = ['object_piece.json']
     urls = 'jigsawview.tests.urls'
 
+    def test_make_sure_set_mode_is_called_on_pieces(self):
+        view = ObjectView(mode='new')
+        self.assertEqual(view.obj.mode, 'new')
+        self.assertEqual(view.other.mode, 'list')
+
     def test_detail_view_context(self):
         response = self.client.get('/object/1/')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response=response,
-            template_name='obj_detail.html')
+            template_name='tests/obj_detail.html')
         self.assertEqual(
             sorted(response.context_data.keys()),
             sorted(['obj', 'other_paginator', 'other_page_obj',
@@ -251,7 +260,7 @@ class JigsawViewTest(TestCase):
         response = self.client.get('/objects/')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response=response,
-            template_name='obj_list.html')
+            template_name='tests/obj_list.html')
         self.assertEqual(
             sorted(response.context_data.keys()),
             sorted([
@@ -273,7 +282,7 @@ class JigsawViewTest(TestCase):
         response = self.client.get('/object/1/update/')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response=response,
-            template_name='obj_update.html')
+            template_name='tests/obj_update.html')
         self.assertEqual(
             sorted(response.context_data.keys()),
             sorted([
@@ -311,7 +320,7 @@ class JigsawViewTest(TestCase):
         response = self.client.get('/object/new/')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response=response,
-            template_name='obj_new.html')
+            template_name='tests/obj_new.html')
         self.assertEqual(
             sorted(response.context_data.keys()),
             sorted([
@@ -344,38 +353,38 @@ class ObjectPieceTest(TestCase):
     fixtures = ['object_piece.json']
 
     def test_get_object_with_no_arguments_raises_an_exception(self):
-        object_view = MyObjectPiece(mode='detail')
+        object_view = MyObjectPiece(bound=True, mode='detail')
         with self.assertRaises(AttributeError):
             object_view.get_object(request=Mock(), context={})
 
     def test_get_object_by_pk(self):
-        object_view = MyObjectPiece(mode='detail')
+        object_view = MyObjectPiece(bound=True, mode='detail')
         obj = object_view.get_object(request=Mock(), context={}, pk='1')
         self.assertTrue(isinstance(obj, MyObjectModel))
         self.assertEqual(obj.id, 1)
 
     def test_get_object_with_different_pk(self):
-        object_view = MyObjectPiece(mode='detail')
+        object_view = MyObjectPiece(bound=True, mode='detail')
         object_view.pk_url_kwarg = 'obj_id'
         obj = object_view.get_object(request=Mock(), context={}, obj_id='1')
         self.assertTrue(isinstance(obj, MyObjectModel))
         self.assertEqual(obj.id, 1)
 
     def test_get_object_by_slug(self):
-        object_view = MyObjectPiece(mode='detail')
+        object_view = MyObjectPiece(bound=True, mode='detail')
         obj = object_view.get_object(request=Mock(), context={}, slug='object_1')
         self.assertTrue(isinstance(obj, MyObjectModel))
         self.assertEqual(obj.id, 1)
 
     def test_get_object_by_custom_url_slug(self):
-        object_view = MyObjectPiece(mode='detail')
+        object_view = MyObjectPiece(bound=True, mode='detail')
         object_view.slug_url_kwarg = "name"
         obj = object_view.get_object(request=Mock(), context={}, name='object_1')
         self.assertTrue(isinstance(obj, MyObjectModel))
         self.assertEqual(obj.id, 1)
 
     def test_get_object_by_custom_slug_field(self):
-        object_view = MyObjectPiece(mode='detail')
+        object_view = MyObjectPiece(bound=True, mode='detail')
         object_view.slug_field = "other_slug_field"
         object_view.slug_url_kwarg = "name"
         obj = object_view.get_object(request=Mock(), context={}, name='other_object_1')
@@ -384,12 +393,11 @@ class ObjectPieceTest(TestCase):
 
     def test_get_context_data_in_detail_mode(self):
         rf = RequestFactory()
-        object_view = MyObjectPiece()
-        object_view.view_name = 'my_object'
-        request = rf.get('object/1/')
+        object_piece = MyObjectPiece(bound=True, mode='detail')
+        object_piece.view_name = 'my_object'
+        object_piece.request = rf.get('object/1/')
         context = {'demo': True}
-        context = object_view.get_context_data(
-            request, context, 'detail', pk=1)
+        context = object_piece.get_context_data(context, pk=1)
         self.assertEqual(len(context), 2)
         # Test the previous context wasn't discarded
         self.assertTrue('demo' in context)
@@ -400,12 +408,11 @@ class ObjectPieceTest(TestCase):
 
     def test_get_context_data_in_list_mode(self):
         rf = RequestFactory()
-        object_view = MyObjectPiece()
-        object_view.view_name = 'my_object'
-        request = rf.get('objects')
+        object_piece = MyObjectPiece(bound=True, mode='list')
+        object_piece.view_name = 'my_object'
+        object_piece.request = rf.get('objects')
         context = {'demo': True}
-        context = object_view.get_context_data(
-            request, context, 'list')
+        context = object_piece.get_context_data(context)
         self.assertEqual(len(context), 5)
         # Test the previous context wasn't discarded
         self.assertTrue('demo' in context)
@@ -419,12 +426,11 @@ class ObjectPieceTest(TestCase):
 
     def test_get_context_data_in_update_mode(self):
         rf = RequestFactory()
-        object_view = MyObjectPiece()
-        object_view.view_name = 'my_object'
-        request = rf.get('object/1/update/')
+        object_piece = MyObjectPiece(bound=True, mode='update')
+        object_piece.view_name = 'my_object'
+        object_piece.request = rf.get('object/1/update/')
         context = {'demo': True}
-        context = object_view.get_context_data(
-            request, context, 'update', pk=1)
+        context = object_piece.get_context_data(context, pk=1)
         self.assertEqual(len(context), 3)
         # Test the previous context wasn't discarded
         self.assertTrue('demo' in context)
@@ -446,12 +452,11 @@ class ObjectPieceTest(TestCase):
 
     def test_get_context_data_in_new_mode(self):
         rf = RequestFactory()
-        object_view = MyObjectPiece()
-        object_view.view_name = 'my_object'
-        request = rf.get('object/new/')
+        object_piece = MyObjectPiece(bound=True, mode='new')
+        object_piece.view_name = 'my_object'
+        object_piece.request = rf.get('object/new/')
         context = {'demo': True}
-        context = object_view.get_context_data(
-            request, context, 'new')
+        context = object_piece.get_context_data(context)
         self.assertEqual(len(context), 2)
         # Test the previous context wasn't discarded
         self.assertTrue('demo' in context)

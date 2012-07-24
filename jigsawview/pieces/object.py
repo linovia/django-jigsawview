@@ -29,7 +29,7 @@ class ObjectPiece(Piece):
     # Single object management
     #
 
-    def get_object(self, request, context, queryset=None, **kwargs):
+    def get_object(self, queryset=None, **kwargs):
         """
         Returns the object the view is displaying.
 
@@ -39,7 +39,7 @@ class ObjectPiece(Piece):
         # Use a custom queryset if provided; this is required for subclasses
         # like DateDetailView
         if queryset is None:
-            queryset = self.get_queryset(request, context)
+            queryset = self.get_queryset()
 
         # Next, try looking up by primary key.
         pk = kwargs.get(self.pk_url_kwarg, None)
@@ -81,7 +81,7 @@ class ObjectPiece(Piece):
     # Queryset
     #
 
-    def get_queryset(self, request, context):
+    def get_queryset(self):
         """
         Get the queryset to look an object up against. May not be called if
         `get_object` is overridden.
@@ -128,24 +128,24 @@ class ObjectPiece(Piece):
                 model = self.get_queryset().model
             return model_forms.modelform_factory(model)
 
-    def get_form(self, request, **kwargs):
+    def get_form(self, **kwargs):
         """
         Returns an instance of the form to be used in this view.
         """
         form_class = self.get_form_class(**kwargs)
-        return form_class(**self.get_form_kwargs(request, **kwargs))
+        return form_class(**self.get_form_kwargs(**kwargs))
 
-    def get_form_kwargs(self, request, **kwargs):
+    def get_form_kwargs(self, **kwargs):
         """
         Returns the keyword arguments for instanciating the form.
         """
         args = {
             'initial': self.get_initial()
         }
-        if request.method in ('POST', 'PUT'):
+        if self.request.method in ('POST', 'PUT'):
             args.update({
-                'data': request.POST,
-                'files': request.FILES,
+                'data': self.request.POST,
+                'files': self.request.FILES,
             })
         if 'instance' in kwargs:
             args['instance'] = kwargs['instance']
@@ -176,14 +176,14 @@ class ObjectPiece(Piece):
     # Generic members
     #
 
-    def get_context_data(self, request, context, mode, **kwargs):
-        mode = self.mode or mode
+    def get_context_data(self, context, **kwargs):
+        mode = self.mode
         if mode in ('detail', 'update', 'delete'):
-            obj = self.get_object(request, context, **kwargs)
+            obj = self.get_object(**kwargs)
             context_object_name = self.get_context_object_name(obj)
             context[context_object_name] = obj
         elif mode == 'list':
-            objs = self.get_queryset(request, context)
+            objs = self.get_queryset()
             context_object_name = self.get_context_object_name()
             context.update({
                 context_object_name + '_list': objs,
@@ -195,16 +195,15 @@ class ObjectPiece(Piece):
             context_object_name = self.get_context_object_name()
 
         if mode == 'update':
-            form = self.get_form(request, instance=obj)
+            form = self.get_form(instance=obj)
             context[context_object_name + '_form'] = form
         elif mode == 'new':
-            form = self.get_form(request)
+            form = self.get_form()
             context[context_object_name + '_form'] = form
         return context
 
-    def dispatch(self, request, context, mode):
-        mode = self.mode or mode
-        if mode in ('update', 'new'):
+    def dispatch(self, context):
+        if self.mode in ('update', 'new'):
             form_name = self.get_context_object_name() + '_form'
             form = context[form_name]
             if form.is_valid():
@@ -214,4 +213,11 @@ class ObjectPiece(Piece):
         return
 
     def get_template_name(self, *args, **kwargs):
+        app_name = None
+        if self.model:
+            app_name = self.model._meta.app_label
+        if hasattr(self, 'object') and self.object:
+            app_name = type(self.object)._meta.app_label
+        if app_name:
+            return u'%s/%s_%s' % (app_name, self.view_name, self.mode)
         return u'%s_%s' % (self.view_name, self.mode)
