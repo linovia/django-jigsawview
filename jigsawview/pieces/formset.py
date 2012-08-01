@@ -19,11 +19,24 @@ class ModelFormsetPiece(Piece):
     model = None
     queryset = None
     formset = None
+    initial = {}
 
     def __init__(self, *args, **kwargs):
         super(ModelFormsetPiece, self).__init__(*args, **kwargs)
         if not self.formset:
             self.formset = modelformset_factory(self.model)
+
+    def get_context_name(self):
+        """
+        Returns the formset context name
+        """
+        return self.view_name + u'_formset'
+
+    def get_initial(self):
+        """
+        Returns the initial data to use for forms on this view.
+        """
+        return self.initial.copy()
 
     def get_queryset(self):
         """
@@ -42,21 +55,45 @@ class ModelFormsetPiece(Piece):
                     })
         return self.queryset._clone()
 
+    def get_formset(self, **kwargs):
+        """
+        Returns an instance of the formset to be used in this view.
+        """
+        formset_class = self.formset
+        return formset_class(**self.get_form_kwargs(**kwargs))
+
+    def get_form_kwargs(self, **kwargs):
+        """
+        Returns the keyword arguments for instanciating the form.
+        """
+        args = {
+            'initial': self.get_initial(),
+            'queryset': self.get_queryset(),
+        }
+        if self.request.method in ('POST', 'PUT'):
+            args.update({
+                'data': self.request.POST,
+                'files': self.request.FILES,
+            })
+        if 'instance' in kwargs:
+            args['instance'] = kwargs['instance']
+        return args
+
     def get_context_data(self, context, **kwargs):
-        formset = self.formset(queryset=self.get_queryset())
-        context[self.view_name + '_formset'] = formset
+        context[self.get_context_name()] = self.get_formset()
         return context
 
-    def form_valid(self, form):
+    def formset_valid(self, formset):
+        formset.save()
         return
 
-    def form_invalid(self, form):
+    def formset_invalid(self, formset):
         return
 
     def dispatch(self, context):
-        form_name = self.get_context_object_name() + '_form'
-        form = context[form_name]
-        if form.is_valid():
-            return self.form_valid(form)
+        form_name = self.get_context_name()
+        formset = context[form_name]
+        if formset.is_valid():
+            return self.formset_valid(formset)
         else:
-            return self.form_invalid(form)
+            return self.formset_invalid(formset)

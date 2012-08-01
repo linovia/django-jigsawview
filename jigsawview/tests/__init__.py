@@ -552,8 +552,23 @@ class FormPieceTest(TestCase):
 class MyFormsetPiece(ModelFormsetPiece):
     model = MyObjectModel
 
+    def __init__(self, *args, **kwargs):
+        super(MyFormsetPiece, self).__init__(*args, **kwargs)
+        self.formset_is_valid = False
+        self.formset_is_invalid = False
+
+    def formset_valid(self, formset):
+        self.formset_is_valid = True
+        super(MyFormsetPiece, self).formset_valid(formset)
+
+    def formset_invalid(self, formset):
+        self.formset_is_invalid = True
+        super(MyFormsetPiece, self).formset_invalid(formset)
+
 
 class ModelFormsetPieceTest(TestCase):
+
+    fixtures = ['object_piece.json']
 
     def test_formset_in_context(self):
         rf = RequestFactory()
@@ -567,5 +582,39 @@ class ModelFormsetPieceTest(TestCase):
         self.assertEqual(context['demo'], True)
         # Test the form is here
         self.assertTrue('bugs_formset' in context)
+        formset = context['bugs_formset']
         from django.forms.models import BaseModelFormSet
-        self.assertTrue(isinstance(context['bugs_formset'], BaseModelFormSet))
+        self.assertTrue(isinstance(formset, BaseModelFormSet))
+        self.assertEqual(formset.total_form_count(), 3)  # 2 instances + 1 empty
+
+    def test_valid_formset(self):
+        rf = RequestFactory()
+        self.assertEqual(len(MyObjectModel.objects.all()), 2)
+        formset_piece = MyFormsetPiece(bound=True, mode='new')
+        formset_piece.view_name = 'bugs'
+        formset_piece.request = rf.post('demo/', {
+            'form-TOTAL_FORMS': '3',
+            'form-INITIAL_FORMS': '2',
+            'form-0-slug': 'object_1',
+            'form-0-other_slug_field': 'other_object_1',
+            'form-0-id': '1',
+            'form-1-slug': 'modified_2',
+            'form-1-other_slug_field': 'other_modified_2',
+            'form-1-id': '2',
+            'form-2-slug': 'object_3',
+            'form-2-other_slug_field': 'other_object_3',
+        })
+        context = formset_piece.get_context_data({'demo': True})
+        formset_piece.dispatch(context)
+
+        self.assertTrue(formset_piece.formset_is_valid)
+        self.assertFalse(formset_piece.formset_is_invalid)
+
+        self.assertEqual(len(MyObjectModel.objects.all()), 3)
+        objs = MyObjectModel.objects.all().order_by('id')
+        self.assertEqual(objs[0].slug, 'object_1')
+        self.assertEqual(objs[0].other_slug_field, 'other_object_1')
+        self.assertEqual(objs[1].slug, 'modified_2')
+        self.assertEqual(objs[1].other_slug_field, 'other_modified_2')
+        self.assertEqual(objs[2].slug, 'object_3')
+        self.assertEqual(objs[2].other_slug_field, 'other_object_3')
