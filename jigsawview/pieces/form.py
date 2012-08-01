@@ -11,6 +11,12 @@ class FormPiece(Piece):
     form_class = None
     initial = {}
 
+    def get_context_name(self):
+        """
+        Returns the form context name
+        """
+        return self.view_name + u'_form'
+
     def get_initial(self):
         """
         Returns the initial data to use for forms on this view.
@@ -54,11 +60,11 @@ class FormPiece(Piece):
 
     def get_context_data(self, context, **kwargs):
         form = self.get_form()
-        context[self.view_name + '_form'] = form
+        context[self.get_context_name()] = form
         return context
 
     def dispatch(self, context):
-        form_name = self.view_name + '_form'
+        form_name = self.get_context_name()
         form = context[form_name]
         if form.is_valid():
             return self.form_valid(form)
