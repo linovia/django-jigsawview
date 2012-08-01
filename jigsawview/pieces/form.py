@@ -5,8 +5,6 @@ Form piece.
 
 from jigsawview.pieces.base import Piece
 
-from django.http import HttpResponseRedirect
-
 
 class FormPiece(Piece):
 
