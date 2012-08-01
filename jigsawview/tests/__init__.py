@@ -10,7 +10,7 @@ from django.test import RequestFactory
 from django import forms
 
 
-from jigsawview.pieces import Piece, FormPiece
+from jigsawview.pieces import Piece, FormPiece, ModelFormsetPiece
 from jigsawview.views import JigsawView
 
 from jigsawview.tests.models import MyObjectModel, MyOtherObjectModel
@@ -542,3 +542,30 @@ class FormPieceTest(TestCase):
         self.assertFalse(form_piece.form_is_valid)
         self.assertTrue(form_piece.form_is_invalid)
         self.assertTrue(context['login_form'].errors)
+
+
+#
+# FORMSET TESTS
+#
+
+
+class MyFormsetPiece(ModelFormsetPiece):
+    model = MyObjectModel
+
+
+class ModelFormsetPieceTest(TestCase):
+
+    def test_formset_in_context(self):
+        rf = RequestFactory()
+        formset_piece = MyFormsetPiece(bound=True, mode='new')
+        formset_piece.view_name = 'bugs'
+        formset_piece.request = rf.get('demo/')
+        context = formset_piece.get_context_data({'demo': True})
+        self.assertEqual(len(context), 2)
+        # Test the previous context wasn't discarded
+        self.assertTrue('demo' in context)
+        self.assertEqual(context['demo'], True)
+        # Test the form is here
+        self.assertTrue('bugs_formset' in context)
+        from django.forms.models import BaseModelFormSet
+        self.assertTrue(isinstance(context['bugs_formset'], BaseModelFormSet))
