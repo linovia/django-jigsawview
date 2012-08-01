@@ -541,7 +541,9 @@ class FormPieceTest(TestCase):
         form_piece.dispatch(context)
         self.assertFalse(form_piece.form_is_valid)
         self.assertTrue(form_piece.form_is_invalid)
-        self.assertTrue(context['login_form'].errors)
+        self.assertEqual(context['login_form'].errors, {
+            'description': [u'This field is required.'],
+        })
 
 
 #
