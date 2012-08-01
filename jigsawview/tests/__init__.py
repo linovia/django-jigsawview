@@ -618,3 +618,42 @@ class ModelFormsetPieceTest(TestCase):
         self.assertEqual(objs[1].other_slug_field, 'other_modified_2')
         self.assertEqual(objs[2].slug, 'object_3')
         self.assertEqual(objs[2].other_slug_field, 'other_object_3')
+
+    def test_invalid_formset(self):
+        rf = RequestFactory()
+        self.assertEqual(len(MyObjectModel.objects.all()), 2)
+        formset_piece = MyFormsetPiece(bound=True, mode='new')
+        formset_piece.view_name = 'bugs'
+        formset_piece.request = rf.post('demo/', {
+            'form-TOTAL_FORMS': '3',
+            'form-INITIAL_FORMS': '2',
+            'form-0-slug': 'object_1',
+            'form-0-other_slug_field': 'other_object_1',
+            'form-0-id': '1',
+            'form-1-slug': 'modified_2',
+            'form-1-other_slug_field': '',
+            'form-1-id': '2',
+            'form-2-slug': '',
+            'form-2-other_slug_field': 'other_object_3',
+        })
+        context = formset_piece.get_context_data({'demo': True})
+        formset_piece.dispatch(context)
+
+        self.assertFalse(formset_piece.formset_is_valid)
+        self.assertTrue(formset_piece.formset_is_invalid)
+
+        self.assertEqual(len(MyObjectModel.objects.all()), 2)
+        objs = MyObjectModel.objects.all().order_by('id')
+        self.assertEqual(objs[0].slug, 'object_1')
+        self.assertEqual(objs[0].other_slug_field, 'other_object_1')
+        self.assertEqual(objs[1].slug, 'object_2')
+        self.assertEqual(objs[1].other_slug_field, 'other_object_2')
+
+        formset = context['bugs_formset']
+        self.assertEqual(formset[0].errors, {})
+        self.assertEqual(formset[1].errors, {
+            'other_slug_field': [u'This field is required.'],
+        })
+        self.assertEqual(formset[2].errors, {
+            'slug': [u'This field is required.'],
+        })
