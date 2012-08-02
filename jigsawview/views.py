@@ -68,8 +68,10 @@ class JigsawView(object):
             piece = unbound_piece(
                 view_mode=mode,
                 inherited_piece=(name not in self.base_pieces),
-                view_name=name)
+                view_name=name,
+                view=self)
             setattr(self, name, piece)
+        self.context = {}
 
     def get_template_name(self):
         """
@@ -93,11 +95,10 @@ class JigsawView(object):
         """
         Returns all the aggregated contexes from the pieces.
         """
-        context = {}
         for piece_name in self.pieces.keys():
             piece = getattr(self, piece_name)
-            context = piece.get_context_data(context, **kwargs)
-        return context
+            self.context = piece.get_context_data(self.context, **kwargs)
+        return self.context
 
     @classonlymethod
     def as_view(cls, **initkwargs):
