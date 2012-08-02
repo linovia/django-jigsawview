@@ -69,6 +69,7 @@ class ModelFormsetPiece(Piece):
         args = {
             'initial': self.get_initial(),
             'queryset': self.get_queryset(),
+            'prefix': self.view_name,
         }
         if self.request.method in ('POST', 'PUT'):
             args.update({
