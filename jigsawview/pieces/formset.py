@@ -102,3 +102,25 @@ class ModelFormsetPiece(Piece):
             return self.formset_valid(formset)
         else:
             return self.formset_invalid(formset)
+
+
+class InlineFormsetPiece(ModelFormsetPiece):
+
+    root_instance = None
+    fk_field = None
+
+    def get_queryset(self):
+        qs = self.model.objects.none()
+        if self.root_instance in self.view.context:
+            qs = self.model.objects.filter(**{
+                self.fk_field: self.view.context[self.root_instance]
+            })
+        return qs
+
+    def formset_valid(self, formset):
+        instance = self.view.context[self.root_instance]
+        objs = formset.save(commit=False)
+        for obj in objs:
+            setattr(obj, self.fk_field, instance)
+            obj.save()
+        return
