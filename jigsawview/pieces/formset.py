@@ -23,12 +23,15 @@ class ModelFormsetPiece(Piece):
 
     fields = None
     exclude = None
+    extra = 1
+    can_delete = False
 
     def __init__(self, *args, **kwargs):
         super(ModelFormsetPiece, self).__init__(*args, **kwargs)
         if not self.formset:
             self.formset = modelformset_factory(self.model,
-                fields=self.fields, exclude=self.exclude)
+                fields=self.fields, exclude=self.exclude,
+                extra=self.extra, can_delete=self.can_delete)
 
     def get_context_name(self):
         """
