@@ -208,8 +208,7 @@ class ObjectPiece(Piece):
             form = context[form_name]
             if form.is_valid():
                 return self.form_valid(form)
-            else:
-                return self.form_invalid(form)
+            return self.form_invalid(form)
         return
 
     def get_template_name(self, *args, **kwargs):
