@@ -130,6 +130,6 @@ class InlineFormsetPiece(ModelFormsetPiece):
     def formset_valid(self, formset):
         objs = formset.save(commit=False)
         for obj in objs:
-            setattr(obj, self.fk_field, self.instance)
+            setattr(obj, self.fk_field, self.root_instance)
             obj.save()
         return
