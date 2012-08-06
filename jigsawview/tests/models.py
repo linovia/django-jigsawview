@@ -27,3 +27,9 @@ class MyOtherObjectModel(models.Model):
 
     def __unicode__(self):
         return u'%i' % (self.id,)
+
+
+class MyInlineModel(models.Model):
+
+    root_obj = models.ForeignKey(MyObjectModel)
+    data = models.CharField(max_length=32)

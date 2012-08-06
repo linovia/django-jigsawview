@@ -26,5 +26,13 @@
     "model": "tests.myotherobjectmodel",
     "fields": {
     }
+  },
+  {
+    "pk": 1,
+    "model": "tests.myinlinemodel",
+    "fields": {
+      "data": "azerty",
+      "root_obj": 1
+    }
   }
 ]

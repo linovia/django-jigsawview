@@ -18,6 +18,7 @@ class ModelFormsetPiece(Piece):
 
     model = None
     queryset = None
+    formset_factory = None
     formset = None
     initial = {}
 
@@ -28,8 +29,8 @@ class ModelFormsetPiece(Piece):
 
     def __init__(self, *args, **kwargs):
         super(ModelFormsetPiece, self).__init__(*args, **kwargs)
-        if not self.formset:
-            self.formset = modelformset_factory(self.model,
+        if not self.formset_factory:
+            self.formset_factory = modelformset_factory(self.model,
                 fields=self.fields, exclude=self.exclude,
                 extra=self.extra, can_delete=self.can_delete)
 
@@ -66,8 +67,10 @@ class ModelFormsetPiece(Piece):
         """
         Returns an instance of the formset to be used in this view.
         """
-        formset_class = self.formset
-        return formset_class(**self.get_form_kwargs(**kwargs))
+        if not self.formset:
+            formset_factory = self.formset_factory
+            self.formset = formset_factory(**self.get_form_kwargs(**kwargs))
+        return self.formset
 
     def get_form_kwargs(self, **kwargs):
         """
@@ -83,12 +86,10 @@ class ModelFormsetPiece(Piece):
                 'data': self.request.POST,
                 'files': self.request.FILES,
             })
-        if 'instance' in kwargs:
-            args['instance'] = kwargs['instance']
         return args
 
     def get_context_data(self, context, **kwargs):
-        context[self.get_context_name()] = self.get_formset()
+        context[self.get_context_name()] = self.get_formset(**kwargs)
         return context
 
     def formset_valid(self, formset):
@@ -99,12 +100,18 @@ class ModelFormsetPiece(Piece):
         return
 
     def dispatch(self, context):
-        form_name = self.get_context_name()
-        formset = context[form_name]
+        formset = self.get_formset()
         if formset.is_valid():
             return self.formset_valid(formset)
         else:
             return self.formset_invalid(formset)
+
+    #
+    # Utility function
+    #
+
+    def is_valid(self):
+        return self.get_formset().is_valid()
 
 
 class InlineFormsetPiece(ModelFormsetPiece):
@@ -114,16 +121,15 @@ class InlineFormsetPiece(ModelFormsetPiece):
 
     def get_queryset(self):
         qs = self.model.objects.none()
-        if self.root_instance in self.view.context:
+        if self.root_instance:
             qs = self.model.objects.filter(**{
-                self.fk_field: self.view.context[self.root_instance]
+                self.fk_field: self.root_instance
             })
         return qs
 
     def formset_valid(self, formset):
-        instance = self.view.context[self.root_instance]
         objs = formset.save(commit=False)
         for obj in objs:
-            setattr(obj, self.fk_field, instance)
+            setattr(obj, self.fk_field, self.instance)
             obj.save()
         return

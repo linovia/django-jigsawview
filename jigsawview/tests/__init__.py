@@ -2,6 +2,8 @@
 Unit tests for the jigsawview application
 """
 
+import logging
+
 from mock import Mock
 
 from django.test import TestCase
@@ -14,7 +16,8 @@ from jigsawview.pieces import Piece, FormPiece, ModelFormsetPiece
 from jigsawview.views import JigsawView
 
 from jigsawview.tests.models import MyObjectModel, MyOtherObjectModel
-from jigsawview.tests.views import MyObjectPiece, ObjectView
+from jigsawview.tests.views import MyObjectPiece, MyRootPiece
+from jigsawview.tests.views import ObjectView
 
 #
 # Various test Pieces and View definitions
@@ -397,7 +400,7 @@ class ObjectPieceTest(TestCase):
         rf = RequestFactory()
         object_piece = MyObjectPiece(bound=True, mode='detail')
         object_piece.view_name = 'my_object'
-        object_piece.request = rf.get('object/1/')
+        object_piece.add_kwargs(request=rf.get('object/1/'))
         context = {'demo': True}
         context = object_piece.get_context_data(context, pk=1)
         self.assertEqual(len(context), 2)
@@ -412,7 +415,7 @@ class ObjectPieceTest(TestCase):
         rf = RequestFactory()
         object_piece = MyObjectPiece(bound=True, mode='list')
         object_piece.view_name = 'my_object'
-        object_piece.request = rf.get('objects')
+        object_piece.add_kwargs(request=rf.get('objects'))
         context = {'demo': True}
         context = object_piece.get_context_data(context)
         self.assertEqual(len(context), 5)
@@ -430,7 +433,7 @@ class ObjectPieceTest(TestCase):
         rf = RequestFactory()
         object_piece = MyObjectPiece(bound=True, mode='update')
         object_piece.view_name = 'my_object'
-        object_piece.request = rf.get('object/1/update/')
+        object_piece.add_kwargs(request=rf.get('object/1/update/'))
         context = {'demo': True}
         context = object_piece.get_context_data(context, pk=1)
         self.assertEqual(len(context), 3)
@@ -456,7 +459,7 @@ class ObjectPieceTest(TestCase):
         rf = RequestFactory()
         object_piece = MyObjectPiece(bound=True, mode='new')
         object_piece.view_name = 'my_object'
-        object_piece.request = rf.get('object/new/')
+        object_piece.add_kwargs(request=rf.get('object/new/'))
         context = {'demo': True}
         context = object_piece.get_context_data(context)
         self.assertEqual(len(context), 2)
@@ -475,6 +478,71 @@ class ObjectPieceTest(TestCase):
         self.assertEqual(
             context['my_object_form']['other_slug_field'].value(),
             None)
+
+
+class ObjectPieceWithInlinesTest(TestCase):
+
+    fixtures = ['object_piece.json']
+
+    def test_get_context_with_inlines_in_new_mode(self):
+        rf = RequestFactory()
+        object_piece = MyRootPiece(bound=True, mode='new')
+        object_piece.view_name = 'root'
+        object_piece.add_kwargs(request=rf.get('object/new/'))
+        context = {'demo': True}
+        context = object_piece.get_context_data(context)
+        self.assertEqual(len(context), 3)
+        # Test the previous context wasn't discarded
+        self.assertTrue('demo' in context)
+        self.assertEqual(context['demo'], True)
+        # Test the root object form
+        self.assertEqual(object_piece._inlines['data'].mode, 'new')
+        self.assertTrue('root_form' in context)
+        self.assertEqual(
+            sorted(context['root_form'].fields.keys()),
+            sorted(['slug', 'other_slug_field'])
+        )
+        # Test the inline form
+        self.assertTrue('root_data_formset' in context)
+        inline = context['root_data_formset']
+        from django.forms.models import BaseModelFormSet
+        self.assertTrue(isinstance(inline, BaseModelFormSet))
+
+    def test_get_context_with_inlines_in_update_mode(self):
+        rf = RequestFactory()
+        object_piece = MyRootPiece(bound=True, mode='update')
+        object_piece.view_name = 'root'
+        object_piece.add_kwargs(request=rf.get('object/1/update/'))
+        context = {'demo': True}
+        context = object_piece.get_context_data(context, pk=1)
+        self.assertEqual(len(context), 4)
+        # Test the previous context wasn't discarded
+        self.assertTrue('demo' in context)
+        self.assertEqual(context['demo'], True)
+        # Test the root object form
+        self.assertTrue('root_form' in context)
+        self.assertEqual(
+            sorted(context['root_form'].fields.keys()),
+            sorted(['slug', 'other_slug_field'])
+        )
+        # Test the inline form
+        self.assertEqual(object_piece._inlines['data'].mode, 'update')
+        self.assertTrue(object_piece._inlines['data'].root_instance)
+        self.assertTrue('root_data_formset' in context)
+        inline = context['root_data_formset']
+        from django.forms.models import BaseModelFormSet
+        self.assertTrue(isinstance(inline, BaseModelFormSet))
+        self.assertEqual(
+            sorted(inline[0].fields.keys()),
+            sorted(['data', 'id', 'root_obj'])
+        )
+        self.assertEqual(len(inline), 2)
+        self.assertEqual(
+            inline[0]['id'].value(),
+            1)
+        self.assertEqual(
+            inline[0]['data'].value(),
+            'azerty')
 
 
 #
@@ -507,7 +575,7 @@ class FormPieceTest(TestCase):
         rf = RequestFactory()
         form_piece = MyFormPiece(bound=True, mode='detail')
         form_piece.view_name = 'login'
-        form_piece.request = rf.get('login/')
+        form_piece.add_kwargs(request=rf.get('login/'))
         context = form_piece.get_context_data({'demo': True})
         self.assertEqual(len(context), 2)
         # Test the previous context wasn't discarded
@@ -521,10 +589,10 @@ class FormPieceTest(TestCase):
         rf = RequestFactory()
         form_piece = MyFormPiece(bound=True, mode='detail')
         form_piece.view_name = 'login'
-        form_piece.request = rf.post('login/', {
+        form_piece.add_kwargs(request=rf.post('login/', {
             'name': 'Xavier Ordoquy',
             'description': 'Django and Python developer',
-        })
+        }))
         context = form_piece.get_context_data({'demo': True})
         form_piece.dispatch(context)
         self.assertTrue(form_piece.form_is_valid)
@@ -534,9 +602,9 @@ class FormPieceTest(TestCase):
         rf = RequestFactory()
         form_piece = MyFormPiece(bound=True, mode='detail')
         form_piece.view_name = 'login'
-        form_piece.request = rf.post('login/', {
+        form_piece.add_kwargs(request=rf.post('login/', {
             'name': 'Xavier Ordoquy',
-        })
+        }))
         context = form_piece.get_context_data({'demo': True})
         form_piece.dispatch(context)
         self.assertFalse(form_piece.form_is_valid)
@@ -576,7 +644,7 @@ class ModelFormsetPieceTest(TestCase):
         rf = RequestFactory()
         formset_piece = MyFormsetPiece(bound=True, mode='new')
         formset_piece.view_name = 'bugs'
-        formset_piece.request = rf.get('demo/')
+        formset_piece.add_kwargs(request=rf.get('demo/'))
         context = formset_piece.get_context_data({'demo': True})
         self.assertEqual(len(context), 2)
         # Test the previous context wasn't discarded
@@ -594,7 +662,7 @@ class ModelFormsetPieceTest(TestCase):
         self.assertEqual(len(MyObjectModel.objects.all()), 2)
         formset_piece = MyFormsetPiece(bound=True, mode='new')
         formset_piece.view_name = 'bugs'
-        formset_piece.request = rf.post('demo/', {
+        formset_piece.add_kwargs(request=rf.post('demo/', {
             'bugs-TOTAL_FORMS': '3',
             'bugs-INITIAL_FORMS': '2',
             'bugs-0-slug': 'object_1',
@@ -605,7 +673,7 @@ class ModelFormsetPieceTest(TestCase):
             'bugs-1-id': '2',
             'bugs-2-slug': 'object_3',
             'bugs-2-other_slug_field': 'other_object_3',
-        })
+        }))
         context = formset_piece.get_context_data({'demo': True})
         formset_piece.dispatch(context)
 
@@ -626,7 +694,7 @@ class ModelFormsetPieceTest(TestCase):
         self.assertEqual(len(MyObjectModel.objects.all()), 2)
         formset_piece = MyFormsetPiece(bound=True, mode='new')
         formset_piece.view_name = 'bugs'
-        formset_piece.request = rf.post('demo/', {
+        formset_piece.add_kwargs(request=rf.post('demo/', {
             'bugs-TOTAL_FORMS': '3',
             'bugs-INITIAL_FORMS': '2',
             'bugs-0-slug': 'object_1',
@@ -637,7 +705,7 @@ class ModelFormsetPieceTest(TestCase):
             'bugs-1-id': '2',
             'bugs-2-slug': '',
             'bugs-2-other_slug_field': 'other_object_3',
-        })
+        }))
         context = formset_piece.get_context_data({'demo': True})
         formset_piece.dispatch(context)
 

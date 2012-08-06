@@ -2,6 +2,8 @@
 Object related piece
 """
 
+import copy
+
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.http import Http404
 from django.utils.translation import ugettext as _
@@ -24,6 +26,13 @@ class ObjectPiece(Piece):
     initial = {}
     form_class = None
     success_url = None
+
+    inlines = {}
+
+    def __init__(self, *args, **kwargs):
+        super(ObjectPiece, self).__init__(*args, **kwargs)
+        self._inlines = {}
+        self._kwargs = {}
 
     #
     # Single object management
@@ -173,11 +182,39 @@ class ObjectPiece(Piece):
         return url
 
     #
+    # Inlines management
+    #
+
+    def add_kwargs(self, **kwargs):
+        super(ObjectPiece, self).add_kwargs(**kwargs)
+        self._kwargs = copy.copy(kwargs)
+
+    def _create_inlines(self, instance=None):
+        """
+        Instanciate the inlines associated with the object.
+        """
+        self._inlines = {}
+        for name, cls in self.inlines.iteritems():
+            self._inlines[name] = cls(
+                mode=self.mode,
+                view_name='%s_%s' % (self.view_name, name),
+                root_instance=instance,
+                **self._kwargs
+            )
+
+    def are_formsets_valid(self):
+        """
+        Return True if all the formsets are valid
+        """
+        return all([formset.is_valid() for formset in self._inlines.itervalues()])
+
+    #
     # Generic members
     #
 
     def get_context_data(self, context, **kwargs):
         mode = self.mode
+        obj = None
         if mode in ('detail', 'update', 'delete'):
             obj = self.get_object(**kwargs)
             context_object_name = self.get_context_object_name(obj)
@@ -197,17 +234,25 @@ class ObjectPiece(Piece):
         if mode == 'update':
             form = self.get_form(instance=obj)
             context[context_object_name + '_form'] = form
+            self._create_inlines(instance=obj)
         elif mode == 'new':
             form = self.get_form()
             context[context_object_name + '_form'] = form
+            self._create_inlines()
+
+        for name, instance in self._inlines.iteritems():
+            context = instance.get_context_data(context, **kwargs)
         return context
 
     def dispatch(self, context):
         if self.mode in ('update', 'new'):
             form_name = self.get_context_object_name() + '_form'
             form = context[form_name]
-            if form.is_valid():
-                return self.form_valid(form)
+            if form.is_valid() and self.are_formsets_valid():
+                result = self.form_valid(form)
+                for inline in self._inlines.itervalues():
+                    inline.dispatch(context)
+                return result
             return self.form_invalid(form)
         return
 

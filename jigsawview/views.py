@@ -141,9 +141,8 @@ class JigsawView(object):
     def dispatch(self, request, *args, **kwargs):
         for piece_name in reversed(self.pieces.keys()):
             piece = getattr(self, piece_name)
-            for k, v in kwargs.iteritems():
-                setattr(piece, k, v)
-            piece.request = request
+            piece.add_kwargs(**kwargs)
+            piece.add_kwargs(request=request)
         context = self.get_context_data(request, **kwargs)
         for piece_name in reversed(self.pieces.keys()):
             piece = getattr(self, piece_name)

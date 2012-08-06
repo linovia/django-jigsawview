@@ -40,6 +40,10 @@ class BasePiece(object):
             setattr(self, k, v)
         super(BasePiece, self).__init__()
 
+    def add_kwargs(self, **kwargs):
+        for k, v in kwargs.iteritems():
+            setattr(self, k, v)
+
 
 class Piece(BasePiece):
     view_name = None
