@@ -32,4 +32,4 @@ class MyOtherObjectModel(models.Model):
 class MyInlineModel(models.Model):
 
     root_obj = models.ForeignKey(MyObjectModel)
-    data = models.CharField(max_length=32)
+    my_data = models.CharField(max_length=32)

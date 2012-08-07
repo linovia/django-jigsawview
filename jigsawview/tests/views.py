@@ -21,6 +21,12 @@ class MyInlinePiece(InlineFormsetPiece):
     model = MyInlineModel
     fk_field = 'root_obj'
 
+    def formset_valid(self, formset):
+        super(MyInlinePiece, self).formset_valid(formset)
+
+    def formset_invalid(self, formset):
+        super(MyInlinePiece, self).formset_invalid(formset)
+
 
 class MyRootPiece(ObjectPiece):
     model = MyObjectModel

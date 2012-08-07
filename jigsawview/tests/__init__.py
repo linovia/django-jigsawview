@@ -320,7 +320,7 @@ class JigsawViewTest(TestCase):
             template_name='tests/obj_update.html')
         self.assertFormError(response, 'obj_form', 'other_slug_field', u'This field is required.')
 
-    def test_new_view_context(self):
+    def test_new_view(self):
         response = self.client.get('/object/new/')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response=response,
@@ -347,6 +347,62 @@ class JigsawViewTest(TestCase):
         for k, v in new_values.items():
             self.assertEqual(getattr(obj, k), v)
 
+    def test_new_view_with_inline(self):
+        response = self.client.get('/inlines/new/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response=response,
+            template_name='tests/obj_new.html')
+        self.assertEqual(
+            sorted(response.context_data.keys()),
+            sorted(['obj_form', 'obj_data_formset']))
+        new_values = {
+            'slug': 'new_slug_value',
+            'other_slug_field': 'other_slug_value',
+            'obj_data-TOTAL_FORMS': '1',
+            'obj_data-INITIAL_FORMS': '0',
+            'obj_data-MAX_NUM_FORMS': '',
+            'obj_data-0-my_data': 'qwerty',
+            'obj_data-0-id': '',
+        }
+        response = self.client.post('/inlines/new/', new_values)
+        self.assertRedirects(response, '/object/3/',
+            target_status_code=200)
+        obj = MyObjectModel.objects.get(id=3)
+        for key in ('slug', 'other_slug_field'):
+            value = new_values[key]
+            self.assertEqual(getattr(obj, key), value)
+        self.assertEqual(obj.myinlinemodel_set.count(), 1)
+
+    def test_update_view_with_inline(self):
+        response = self.client.get('/inlines/1/update/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response=response,
+            template_name='tests/obj_update.html')
+        self.assertEqual(
+            sorted(response.context_data.keys()),
+            sorted(['obj', 'obj_form', 'obj_data_formset']))
+        inline = response.context_data['obj_data_formset']
+        self.assertEqual(len(inline), 2)
+        self.assertEqual(inline[0]['my_data'].value(), 'azerty')
+
+        new_values = {
+            'slug': 'new_slug_value',
+            'other_slug_field': 'other_slug_value',
+            'obj_data-TOTAL_FORMS': '2',
+            'obj_data-INITIAL_FORMS': '1',
+            'obj_data-MAX_NUM_FORMS': '',
+            'obj_data-0-my_data': 'qwerty',
+            'obj_data-0-id': '1',
+        }
+        response = self.client.post('/inlines/1/update/', new_values)
+        self.assertRedirects(response, '/object/1/',
+            target_status_code=200)
+        obj = MyObjectModel.objects.get(id=1)
+        for key in ('slug', 'other_slug_field'):
+            value = new_values[key]
+            self.assertEqual(getattr(obj, key), value)
+        self.assertEqual(obj.myinlinemodel_set.count(), 1)
+        self.assertEqual(obj.myinlinemodel_set.all()[0].my_data, 'qwerty')
 
 #
 # OBJECT PIECE TESTS
@@ -507,6 +563,9 @@ class ObjectPieceWithInlinesTest(TestCase):
         inline = context['root_data_formset']
         from django.forms.models import BaseModelFormSet
         self.assertTrue(isinstance(inline, BaseModelFormSet))
+        # Make sure the FK isn't part of the formset
+        self.assertFalse('root_obj' in inline[0].fields.keys())
+        self.assertTrue('my_data' in inline[0].fields.keys())
 
     def test_get_context_with_inlines_in_update_mode(self):
         rf = RequestFactory()
@@ -534,14 +593,14 @@ class ObjectPieceWithInlinesTest(TestCase):
         self.assertTrue(isinstance(inline, BaseModelFormSet))
         self.assertEqual(
             sorted(inline[0].fields.keys()),
-            sorted(['data', 'id', 'root_obj'])
+            sorted(['my_data', 'id'])
         )
         self.assertEqual(len(inline), 2)
         self.assertEqual(
             inline[0]['id'].value(),
             1)
         self.assertEqual(
-            inline[0]['data'].value(),
+            inline[0]['my_data'].value(),
             'azerty')
 
 

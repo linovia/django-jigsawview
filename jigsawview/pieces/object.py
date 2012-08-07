@@ -161,10 +161,19 @@ class ObjectPiece(Piece):
         return args
 
     def form_valid(self, form):
+        """
+        Called when the object form is valid.
+        Saves the object and set that object in the inlines.
+        """
         obj = form.save()
+        for inline in self._inlines.itervalues():
+            inline.root_instance = obj
         return HttpResponseRedirect(self.get_success_url(obj=obj))
 
     def form_invalid(self, form):
+        """
+        Called when the form is invalid.
+        """
         return
 
     def get_success_url(self, obj=None):

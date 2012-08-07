@@ -31,7 +31,7 @@
     "pk": 1,
     "model": "tests.myinlinemodel",
     "fields": {
-      "data": "azerty",
+      "my_data": "azerty",
       "root_obj": 1
     }
   }

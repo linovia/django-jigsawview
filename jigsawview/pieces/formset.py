@@ -119,6 +119,12 @@ class InlineFormsetPiece(ModelFormsetPiece):
     root_instance = None
     fk_field = None
 
+    def __init__(self, *args, **kwargs):
+        if not self.exclude:
+            self.exclude = ()
+        self.exclude = self.exclude + (self.fk_field, )
+        super(InlineFormsetPiece, self).__init__(*args, **kwargs)
+
     def get_queryset(self):
         qs = self.model.objects.none()
         if self.root_instance:
