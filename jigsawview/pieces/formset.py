@@ -20,6 +20,7 @@ class ModelFormsetPiece(Piece):
     queryset = None
     formset_factory = None
     formset = None
+    form_class = None
     initial = {}
 
     fields = None
@@ -31,6 +32,7 @@ class ModelFormsetPiece(Piece):
         super(ModelFormsetPiece, self).__init__(*args, **kwargs)
         if not self.formset_factory:
             self.formset_factory = modelformset_factory(self.model,
+                form=self.form_class,
                 fields=self.fields, exclude=self.exclude,
                 extra=self.extra, can_delete=self.can_delete)
 
