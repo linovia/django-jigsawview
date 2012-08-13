@@ -3,7 +3,7 @@ Formset Piece
 """
 
 from django.core.exceptions import ImproperlyConfigured
-from django.forms.models import modelformset_factory
+from django.forms.models import modelformset_factory, ModelForm
 
 
 from jigsawview.pieces.base import Piece
@@ -32,7 +32,7 @@ class ModelFormsetPiece(Piece):
         super(ModelFormsetPiece, self).__init__(*args, **kwargs)
         if not self.formset_factory:
             self.formset_factory = modelformset_factory(self.model,
-                form=self.form_class,
+                form=self.form_class or ModelForm,
                 fields=self.fields, exclude=self.exclude,
                 extra=self.extra, can_delete=self.can_delete)
 
