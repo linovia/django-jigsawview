@@ -27,6 +27,9 @@ class ObjectPiece(Piece):
     form_class = None
     success_url = None
 
+    fields = None
+    exclude = None
+
     inlines = {}
 
     def __init__(self, *args, **kwargs):
@@ -135,7 +138,8 @@ class ObjectPiece(Piece):
                 # Try to get a queryset and extract the model class
                 # from that
                 model = self.get_queryset().model
-            return model_forms.modelform_factory(model)
+            return model_forms.modelform_factory(model,
+                fields=self.fields, exclude=self.exclude)
 
     def get_form(self, **kwargs):
         """
