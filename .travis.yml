@@ -12,3 +12,6 @@ install:
   - python setup.py develop
 # command to run tests
 script: python runtests.py
+branches:
+  except:
+    - python3
