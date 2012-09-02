@@ -9,8 +9,7 @@ jigsawview
 try:
     VERSION = __import__('pkg_resources') \
         .get_distribution('jigsawview').version
-except Exception, e:
+except Exception as e:
     VERSION = 'unknown'
-
 
 from jigsawview.views import JigsawView
