@@ -62,8 +62,10 @@ class JigsawView(object):
 
     __metaclass__ = ViewMetaclass
 
-    def __init__(self, mode):
-        self.mode = mode
+    def __init__(self, **kwargs):
+        for k, v in kwargs.iteritems():
+            setattr(self, k, v)
+        mode = kwargs['mode']
         for name, unbound_piece in self.pieces.iteritems():
             piece = unbound_piece(
                 view_mode=mode,
