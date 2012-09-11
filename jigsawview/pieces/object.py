@@ -29,7 +29,9 @@ class ObjectPiece(Piece):
 
     fields = None
     exclude = None
+
     model_form_class = model_forms.ModelForm
+    formfield_callback = None
 
     inlines = {}
 
@@ -140,7 +142,9 @@ class ObjectPiece(Piece):
                 # from that
                 model = self.get_queryset().model
             return model_forms.modelform_factory(model,
-                fields=self.fields, exclude=self.exclude, form=self.model_form_class)
+                fields=self.fields, exclude=self.exclude,
+                formfield_callback=self.formfield_callback,
+                form=self.model_form_class)
 
     def get_form(self, **kwargs):
         """
