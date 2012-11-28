@@ -1,7 +1,7 @@
 """
 Form piece.
 """
-
+from __future__ import unicode_literals
 
 from jigsawview.pieces.base import Piece
 
@@ -15,7 +15,7 @@ class FormPiece(Piece):
         """
         Returns the form context name
         """
-        return self.view_name + u'_form'
+        return self.view_name + '_form'
 
     def get_initial(self):
         """

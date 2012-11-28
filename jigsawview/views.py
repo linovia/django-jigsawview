@@ -1,6 +1,7 @@
 """
 Base Jigsaw view.
 """
+from __future__ import unicode_literals
 
 import copy
 
@@ -80,16 +81,16 @@ class JigsawView(object):
         Returns the best matching template name.
         """
         if self.template_name:
-            return u'%s' % self.template_name
+            return '%s' % self.template_name
 
         if self.template_name_prefix:
-            return u'%s%s.html' % (self.template_name_prefix, self.mode)
+            return '%s%s.html' % (self.template_name_prefix, self.mode)
 
         for piece_name in reversed(self.pieces.keys()):
             piece = getattr(self, piece_name)
             result = piece.get_template_name()
             if result:
-                return u'%s.html' % result
+                return '%s.html' % result
 
         return None
 
@@ -110,11 +111,11 @@ class JigsawView(object):
         # sanitize keyword arguments
         for key in initkwargs:
             if key in cls.http_method_names:
-                raise TypeError(u"You tried to pass in the %s method name as a "
-                                u"keyword argument to %s(). Don't do that."
+                raise TypeError("You tried to pass in the %s method name as a "
+                                "keyword argument to %s(). Don't do that."
                                 % (key, cls.__name__))
             if not hasattr(cls, key):
-                raise TypeError(u"%s() received an invalid keyword %r" % (
+                raise TypeError("%s() received an invalid keyword %r" % (
                     cls.__name__, key))
 
         def view(request, *args, **kwargs):

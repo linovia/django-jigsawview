@@ -2,6 +2,8 @@
 Object related piece
 """
 
+from __future__ import unicode_literals
+
 import copy
 
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
@@ -69,14 +71,14 @@ class ObjectPiece(Piece):
 
         # If none of those are defined, it's an error.
         else:
-            raise AttributeError(u"Generic detail view %s must be called with "
-                                 u"either an object pk or a slug."
+            raise AttributeError("Generic detail view %s must be called with "
+                                 "either an object pk or a slug."
                                  % self.__class__.__name__)
 
         try:
             obj = queryset.get()
         except ObjectDoesNotExist:
-            raise Http404(_(u"No %(verbose_name)s found matching the query") %
+            raise Http404(_("No %(verbose_name)s found matching the query") %
                           {'verbose_name': queryset.model._meta.verbose_name})
         return obj
 
@@ -106,9 +108,9 @@ class ObjectPiece(Piece):
                 return self.model._default_manager.all()
             else:
                 raise ImproperlyConfigured(
-                    u"%(cls)s is missing a queryset. Define "
-                    u"%(cls)s.model, %(cls)s.queryset, or override "
-                    u"%(cls)s.get_object()." % {
+                    "%(cls)s is missing a queryset. Define "
+                    "%(cls)s.model, %(cls)s.queryset, or override "
+                    "%(cls)s.get_object()." % {
                         'cls': self.__class__.__name__
                     })
         return self.queryset._clone()
@@ -281,5 +283,5 @@ class ObjectPiece(Piece):
         if hasattr(self, 'object') and self.object:
             app_name = type(self.object)._meta.app_label
         if app_name:
-            return u'%s/%s_%s' % (app_name, self.view_name, self.mode)
-        return u'%s_%s' % (self.view_name, self.mode)
+            return '%s/%s_%s' % (app_name, self.view_name, self.mode)
+        return '%s_%s' % (self.view_name, self.mode)

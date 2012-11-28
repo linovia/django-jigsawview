@@ -2,6 +2,8 @@
 Base classes for the jigsawview pieces
 """
 
+from __future__ import unicode_literals
+
 import copy
 
 
@@ -65,9 +67,9 @@ class Piece(BasePiece):
         Give the desired template name for this piece
         """
         if self.template_name:
-            return u'%s' % self.template_name
+            return '%s' % self.template_name
         if self.template_name_prefix:
-            return u'%s_%s' % (self.template_name_prefix, self.mode)
+            return '%s_%s' % (self.template_name_prefix, self.mode)
         return None
 
     def get_context_data(self, context, *args, **kwargs):

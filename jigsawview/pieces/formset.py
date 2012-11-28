@@ -2,6 +2,8 @@
 Formset Piece
 """
 
+from __future__ import unicode_literals
+
 from django.core.exceptions import ImproperlyConfigured
 from django.forms.models import modelformset_factory, ModelForm
 
@@ -40,7 +42,7 @@ class ModelFormsetPiece(Piece):
         """
         Returns the formset context name
         """
-        return self.view_name + u'_formset'
+        return self.view_name + '_formset'
 
     def get_initial(self):
         """
@@ -58,9 +60,9 @@ class ModelFormsetPiece(Piece):
                 return self.model._default_manager.all()
             else:
                 raise ImproperlyConfigured(
-                    u"%(cls)s is missing a queryset. Define "
-                    u"%(cls)s.model, %(cls)s.queryset, or override "
-                    u"%(cls)s.get_object()." % {
+                    "%(cls)s is missing a queryset. Define "
+                    "%(cls)s.model, %(cls)s.queryset, or override "
+                    "%(cls)s.get_object()." % {
                         'cls': self.__class__.__name__
                     })
         return self.queryset._clone()
