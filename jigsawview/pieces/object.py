@@ -177,7 +177,7 @@ class ObjectPiece(Piece):
         Saves the object and set that object in the inlines.
         """
         obj = form.save()
-        for inline in self._inlines.itervalues():
+        for inline in self._inlines.values():
             inline.root_instance = obj
         return HttpResponseRedirect(self.get_success_url(obj=obj))
 
@@ -214,7 +214,7 @@ class ObjectPiece(Piece):
         Instanciate the inlines associated with the object.
         """
         self._inlines = {}
-        for name, cls in self.inlines.iteritems():
+        for name, cls in self.inlines.items():
             self._inlines[name] = cls(
                 mode=self.mode,
                 view_name='%s_%s' % (self.view_name, name),
@@ -226,7 +226,7 @@ class ObjectPiece(Piece):
         """
         Return True if all the formsets are valid
         """
-        return all([formset.is_valid() for formset in self._inlines.itervalues()])
+        return all([formset.is_valid() for formset in self._inlines.values()])
 
     #
     # Generic members
@@ -260,7 +260,7 @@ class ObjectPiece(Piece):
             context[context_object_name + '_form'] = form
             self._create_inlines()
 
-        for name, instance in self._inlines.iteritems():
+        for name, instance in self._inlines.items():
             context = instance.get_context_data(context, **kwargs)
         return context
 
@@ -270,7 +270,7 @@ class ObjectPiece(Piece):
             form = context[form_name]
             if form.is_valid() and self.are_formsets_valid():
                 result = self.form_valid(form)
-                for inline in self._inlines.itervalues():
+                for inline in self._inlines.values():
                     inline.dispatch(context)
                 return result
             return self.form_invalid(form)

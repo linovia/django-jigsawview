@@ -38,12 +38,12 @@ class BasePiece(object):
         return super(BasePiece, cls).__new__(cls, **kwargs)
 
     def __init__(self, *args, **kwargs):
-        for k, v in kwargs.iteritems():
+        for k, v in kwargs.items():
             setattr(self, k, v)
         super(BasePiece, self).__init__()
 
     def add_kwargs(self, **kwargs):
-        for k, v in kwargs.iteritems():
+        for k, v in kwargs.items():
             setattr(self, k, v)
 
 
