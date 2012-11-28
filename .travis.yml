@@ -19,7 +19,7 @@ install:
 # command to run tests
 script: python runtests.py
 
-branches:
+matrix:
   exclude:
     - python: "3.2"
       env: DJANGO=django==1.4.2 --use-mirrors
