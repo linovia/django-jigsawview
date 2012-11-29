@@ -1,8 +1,9 @@
 """
 Unit tests for the jigsawview application
 """
+from __future__ import unicode_literals
 
-import logging
+import six
 
 from mock import Mock
 
@@ -94,30 +95,30 @@ class TestJigsawViewPiece(TestCase):
         self.assertEqual(piece2.creation_counter + 1, piece1b.creation_counter)
 
     def test_view_keep_pieces_ordered(self):
-        self.assertEqual(MyView1.base_pieces.keys(), ['piece1', 'piece2'])
-        self.assertEqual(MyView2.base_pieces.keys(), ['piece2', 'piece1'])
+        self.assertEqual(list(MyView1.base_pieces.keys()), ['piece1', 'piece2'])
+        self.assertEqual(list(MyView2.base_pieces.keys()), ['piece2', 'piece1'])
 
     def test_base_pieces(self):
-        self.assertEqual(MySubView.base_pieces.keys(), ['piece3'])
-        self.assertEqual(MySubView2.base_pieces.keys(), ['piece3'])
+        self.assertEqual(list(MySubView.base_pieces.keys()), ['piece3'])
+        self.assertEqual(list(MySubView2.base_pieces.keys()), ['piece3'])
 
     def test_view_keep_pieces_ordered_when_subclassed(self):
         self.assertEqual(
-            MySubView.pieces.keys(),
+            list(MySubView.pieces.keys()),
             ['piece1', 'piece2', 'piece3']
         )
         self.assertEqual(
-            MySubView2.pieces.keys(),
+            list(MySubView2.pieces.keys()),
             ['piece2', 'piece1', 'piece3']
         )
 
     def test_changing_the_instance_pieces_does_not_affect_the_class(self):
         view = MyView1(mode='detail')
-        self.assertEqual(view.pieces.keys(), ['piece1', 'piece2'])
+        self.assertEqual(list(view.pieces.keys()), ['piece1', 'piece2'])
         from django.utils.datastructures import SortedDict
         view.pieces = SortedDict()
-        self.assertEqual(view.pieces.keys(), [])
-        self.assertEqual(MyView1.base_pieces.keys(), ['piece1', 'piece2'])
+        self.assertEqual(list(view.pieces.keys()), [])
+        self.assertEqual(list(MyView1.base_pieces.keys()), ['piece1', 'piece2'])
 
     def test_use_view_mode_by_default(self):
         # When the piece is part of the class
@@ -318,7 +319,7 @@ class JigsawViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response=response,
             template_name='tests/obj_update.html')
-        self.assertFormError(response, 'obj_form', 'other_slug_field', u'This field is required.')
+        self.assertFormError(response, 'obj_form', 'other_slug_field', 'This field is required.')
 
     def test_new_view(self):
         response = self.client.get('/object/new/')
@@ -669,7 +670,7 @@ class FormPieceTest(TestCase):
         self.assertFalse(form_piece.form_is_valid)
         self.assertTrue(form_piece.form_is_invalid)
         self.assertEqual(context['login_form'].errors, {
-            'description': [u'This field is required.'],
+            'description': ['This field is required.'],
         })
 
 
@@ -781,8 +782,8 @@ class ModelFormsetPieceTest(TestCase):
         formset = context['bugs_formset']
         self.assertEqual(formset[0].errors, {})
         self.assertEqual(formset[1].errors, {
-            'other_slug_field': [u'This field is required.'],
+            'other_slug_field': ['This field is required.'],
         })
         self.assertEqual(formset[2].errors, {
-            'slug': [u'This field is required.'],
+            'slug': ['This field is required.'],
         })
