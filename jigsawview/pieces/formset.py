@@ -142,4 +142,5 @@ class InlineFormsetPiece(ModelFormsetPiece):
         for obj in objs:
             setattr(obj, self.fk_field, self.root_instance)
             obj.save()
+        formset.save_m2m()
         return
