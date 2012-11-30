@@ -254,10 +254,12 @@ class ObjectPiece(Piece):
         if mode == 'update':
             form = self.get_form(instance=obj)
             context[context_object_name + '_form'] = form
+            self._form = form
             self._create_inlines(instance=obj)
         elif mode == 'new':
             form = self.get_form()
             context[context_object_name + '_form'] = form
+            self._form = form
             self._create_inlines()
 
         for name, instance in self._inlines.items():
@@ -268,13 +270,16 @@ class ObjectPiece(Piece):
         if self.mode in ('update', 'new'):
             form_name = self.get_context_object_name() + '_form'
             form = context[form_name]
-            if form.is_valid() and self.are_formsets_valid():
+            if self.is_form_valid():
                 result = self.form_valid(form)
                 for inline in self._inlines.values():
                     inline.dispatch(context)
                 return result
             return self.form_invalid(form)
         return
+
+    def is_form_valid(self):
+        return self._form.is_valid() and self.are_formsets_valid()
 
     def get_template_name(self, *args, **kwargs):
         app_name = None
