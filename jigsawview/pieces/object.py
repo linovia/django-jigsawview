@@ -177,6 +177,7 @@ class ObjectPiece(Piece):
         Saves the object and set that object in the inlines.
         """
         obj = form.save()
+        self.object = obj
         for inline in self._inlines.values():
             inline.root_instance = obj
         return HttpResponseRedirect(self.get_success_url(obj=obj))
