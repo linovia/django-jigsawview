@@ -310,9 +310,6 @@ class ObjectPiece(Piece):
 
             # Pagination
             page_size = self.get_paginate_by(objs)
-            print '- ' * 80
-            print page_size
-            print '- ' * 80
             paginator, page, is_paginated = None, None, False
             if page_size:
                 paginator, page, objs, is_paginated = self.paginate_queryset(objs, page_size)
