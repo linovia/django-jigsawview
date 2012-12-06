@@ -11,6 +11,7 @@ from django.http import Http404
 from django.utils.translation import ugettext as _
 from django.forms import models as model_forms
 from django.http import HttpResponseRedirect
+from django.core.paginator import Paginator, InvalidPage
 
 
 from jigsawview.pieces.base import Piece
@@ -34,6 +35,12 @@ class ObjectPiece(Piece):
 
     model_form_class = model_forms.ModelForm
     formfield_callback = None
+
+    allow_empty = True
+    paginator_class = Paginator
+    page_kwarg = 'page'
+    paginate_by = None
+    paginate_orphans = 0
 
     inlines = {}
 
@@ -203,6 +210,63 @@ class ObjectPiece(Piece):
         return url
 
     #
+    # Pagination
+    #
+    def paginate_queryset(self, queryset, page_size):
+        """
+        Paginate the queryset, if needed.
+        """
+        paginator = self.get_paginator(
+            queryset, page_size, orphans=self.get_paginate_orphans(),
+            allow_empty_first_page=self.get_allow_empty())
+        page_kwarg = self.page_kwarg
+        page = self.request.GET.get(page_kwarg) or 1
+        try:
+            page_number = int(page)
+        except ValueError:
+            if page == 'last':
+                page_number = paginator.num_pages
+            else:
+                raise Http404(_("Page is not 'last', nor can it be converted to an int."))
+        try:
+            page = paginator.page(page_number)
+            return (paginator, page, page.object_list, page.has_other_pages())
+        except InvalidPage as e:
+            raise Http404(_('Invalid page (%(page_number)s): %(message)s') % {
+                                'page_number': page_number,
+                                'message': str(e)
+            })
+
+    def get_paginate_by(self, queryset):
+        """
+        Get the number of items to paginate by, or ``None`` for no pagination.
+        """
+        return self.paginate_by
+
+    def get_paginator(self, queryset, per_page, orphans=0,
+                      allow_empty_first_page=True, **kwargs):
+        """
+        Return an instance of the paginator for this view.
+        """
+        return self.paginator_class(
+            queryset, per_page, orphans=orphans,
+            allow_empty_first_page=allow_empty_first_page, **kwargs)
+
+    def get_paginate_orphans(self):
+        """
+        Returns the maximum number of orphans extend the last page by when
+        paginating.
+        """
+        return self.paginate_orphans
+
+    def get_allow_empty(self):
+        """
+        Returns ``True`` if the view should display empty lists, and ``False``
+        if a 404 should be raised instead.
+        """
+        return self.allow_empty
+
+    #
     # Inlines management
     #
 
@@ -243,11 +307,21 @@ class ObjectPiece(Piece):
         elif mode == 'list':
             objs = self.get_queryset()
             context_object_name = self.get_context_object_name()
+
+            # Pagination
+            page_size = self.get_paginate_by(objs)
+            print '- ' * 80
+            print page_size
+            print '- ' * 80
+            paginator, page, is_paginated = None, None, False
+            if page_size:
+                paginator, page, objs, is_paginated = self.paginate_queryset(objs, page_size)
+
             context.update({
                 context_object_name + '_list': objs,
-                context_object_name + '_is_paginated': False,
-                context_object_name + '_paginator': None,
-                context_object_name + '_page_obj': None,
+                context_object_name + '_is_paginated': is_paginated,
+                context_object_name + '_paginator': paginator,
+                context_object_name + '_page_obj': page,
             })
         elif mode == 'new':
             context_object_name = self.get_context_object_name()
