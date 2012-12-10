@@ -39,6 +39,7 @@ class ObjectPiece(Piece):
     allow_empty = True
     paginator_class = Paginator
     page_kwarg = 'page'
+    page_all_name = 'all'
     paginate_by = None
     paginate_orphans = 0
 
@@ -216,11 +217,13 @@ class ObjectPiece(Piece):
         """
         Paginate the queryset, if needed.
         """
+        page_kwarg = self.page_kwarg
+        page = self.request.GET.get(page_kwarg) or 1
+        if page == self.page_all_name:
+            return (None, None, queryset, False)
         paginator = self.get_paginator(
             queryset, page_size, orphans=self.get_paginate_orphans(),
             allow_empty_first_page=self.get_allow_empty())
-        page_kwarg = self.page_kwarg
-        page = self.request.GET.get(page_kwarg) or 1
         try:
             page_number = int(page)
         except ValueError:
