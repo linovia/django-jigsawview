@@ -17,7 +17,7 @@ from jigsawview.pieces import Piece, FormPiece, ModelFormsetPiece
 from jigsawview.views import JigsawView
 
 from jigsawview.tests.models import MyObjectModel, MyOtherObjectModel
-from jigsawview.tests.views import MyObjectPiece, MyRootPiece
+from jigsawview.tests.views import MyObjectPiece, MyRootPiece, FilterPiece
 from jigsawview.tests.views import ObjectView
 
 #
@@ -787,3 +787,32 @@ class ModelFormsetPieceTest(TestCase):
         self.assertEqual(formset[2].errors, {
             'slug': ['This field is required.'],
         })
+
+class FiltersTest(TestCase):
+
+    fixtures = ['object_piece.json']
+
+    def test_filters_are_in_context(self):
+        rf = RequestFactory()
+        object_piece = FilterPiece(bound=True, mode='list')
+        object_piece.view_name = 'my_object'
+        object_piece.add_kwargs(request=rf.get('objects'))
+        context = {'demo': True}
+        context = object_piece.get_context_data(context)
+        self.assertEqual(len(context), 6)
+        # Test the previous context wasn't discarded
+        self.assertTrue('demo' in context)
+        self.assertEqual(context['demo'], True)
+        # Test the context addition
+        self.assertTrue('my_object_list' in context)
+        self.assertEqual(len(context['my_object_list']), 2)
+        self.assertTrue('my_object_is_paginated' in context)
+        self.assertTrue('my_object_page_obj' in context)
+        self.assertTrue('my_object_paginator' in context)
+        self.assertTrue('my_object_filters' in context)
+        self.assertEqual(list(context['my_object_filters'].keys()), ['slug'])
+        # TODO: tester les valeurs du filtre
+        self.assertTrue(context['my_object_filters']['slug'])
+
+    def test_simple_filter(self):
+        self.assertTrue(False)

@@ -13,6 +13,7 @@ from django.forms import models as model_forms
 from django.http import HttpResponseRedirect
 from django.core.paginator import Paginator, InvalidPage
 
+import django_filters
 
 from jigsawview.pieces.base import Piece
 
@@ -44,10 +45,25 @@ class ObjectPiece(Piece):
 
     inlines = {}
 
+    filters = None
+
     def __init__(self, *args, **kwargs):
         super(ObjectPiece, self).__init__(*args, **kwargs)
         self._inlines = {}
         self._kwargs = {}
+        self._filters = {}
+        self._filters_class = None
+        if self.filters:
+            meta = type(str('Meta'), (object,), {
+                    'model': self.model,
+                    'fields': self.filters,
+                }
+            )
+            self._filters_class = type(
+                str('%sFilter' % self.__class__.__name__),
+                (django_filters.FilterSet,), {
+                'Meta': meta,
+            })
 
     #
     # Single object management
@@ -320,6 +336,9 @@ class ObjectPiece(Piece):
                 context_object_name + '_paginator': paginator,
                 context_object_name + '_page_obj': page,
             })
+            if self._filters:
+                context[context_object_name + '_filters'] = self._filters
+
         elif mode == 'new':
             context_object_name = self.get_context_object_name()
 

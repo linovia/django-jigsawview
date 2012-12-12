@@ -35,6 +35,11 @@ class MyRootPiece(ObjectPiece):
     }
 
 
+class FilterPiece(ObjectPiece):
+    model = MyObjectModel
+    filters = ('slug',)
+
+
 class ObjectView(JigsawView):
     other = MyOtherObjectPiece(mode='list')
     obj = MyObjectPiece()
