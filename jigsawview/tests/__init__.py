@@ -788,6 +788,7 @@ class ModelFormsetPieceTest(TestCase):
             'slug': ['This field is required.'],
         })
 
+
 class FiltersTest(TestCase):
 
     fixtures = ['object_piece.json']
@@ -810,9 +811,7 @@ class FiltersTest(TestCase):
         self.assertTrue('my_object_page_obj' in context)
         self.assertTrue('my_object_paginator' in context)
         self.assertTrue('my_object_filters' in context)
-        self.assertEqual(list(context['my_object_filters'].keys()), ['slug'])
+        self.assertTrue(context['my_object_filters'])
         # TODO: tester les valeurs du filtre
-        self.assertTrue(context['my_object_filters']['slug'])
-
-    def test_simple_filter(self):
-        self.assertTrue(False)
+        self.assertTrue('slug' in context['my_object_filters'].filters)
+        self.assertTrue(context['my_object_filters'].filters['slug'])
