@@ -47,20 +47,19 @@ class ObjectPiece(Piece):
     inlines = {}
 
     filters = None
+    filter_class = None
 
     def __init__(self, *args, **kwargs):
         super(ObjectPiece, self).__init__(*args, **kwargs)
         self._inlines = {}
         self._kwargs = {}
-        self._filters = {}
-        self._filters_class = None
-        if self.filters:
+        if self.filters and not self.filter_class:
             meta = type(str('Meta'), (object,), {
                     'model': self.model,
                     'fields': self.filters,
                 }
             )
-            self._filters_class = type(
+            self.filter_class = type(
                 str('%sFilter' % self.__class__.__name__),
                 (django_filters.FilterSet,), {
                 'Meta': meta,
@@ -327,6 +326,12 @@ class ObjectPiece(Piece):
             objs = self.get_queryset()
             context_object_name = self.get_context_object_name()
 
+            # Filters
+            if self.filter_class:
+                filters = self.filter_class(self.request.GET, self.get_queryset())
+                context[context_object_name + '_filters'] = filters
+                objs = filters.qs
+
             # Pagination
             page_size = self.get_paginate_by(objs)
             paginator, page, is_paginated = None, None, False
@@ -339,8 +344,6 @@ class ObjectPiece(Piece):
                 context_object_name + '_paginator': paginator,
                 context_object_name + '_page_obj': page,
             })
-            if self._filters:
-                context[context_object_name + '_filters'] = self._filters
 
         elif mode == 'new':
             context_object_name = self.get_context_object_name()
