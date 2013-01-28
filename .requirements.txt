@@ -3,3 +3,4 @@
 # THIS IS FOR TRAVIS CI ONLY
 #
 mock==0.8.0
+-e git://github.com/linovia/django-filter.git@d1ae8b51a6a47388c4ef583d115e66a61218b2be#egg=django-filter-dev
