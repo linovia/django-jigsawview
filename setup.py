@@ -27,7 +27,7 @@ setup(
     author='Xavier Ordoquy',
     author_email='xordoquy@linovia.com',
     url='https://github.com/linovia/django-jigsawview',
-    description='Create your view like a jigsaw.',
+    description='An extended alternative to Django generic class based views.',
     long_description=__doc__,
     packages=find_packages(exclude=['tests']),
     zip_safe=False,
@@ -43,5 +43,8 @@ setup(
         'Intended Audience :: Developers',
         'Programming Language :: Python'
         'Environment :: Web Environment',
+        'Development Status :: 2 - Pre-Alpha',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python',
     ],
 )
