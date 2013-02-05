@@ -19,8 +19,8 @@ Contents:
    :maxdepth: 2
 
    tutorial
-   design
-   object_piece
+   usage
+   filters
 
 
 Indices and tables
