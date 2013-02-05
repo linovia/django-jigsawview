@@ -1,9 +1,6 @@
 Tutorial
 ~~~~~~~~
 
-Basic use case
-==============
-
 The basic use case will look pretty similar to the Django generic
 class based views. Let's start with a basic models::
 
@@ -58,8 +55,7 @@ Last, we need to configure our urls::
 And now, you have all the basic views to list your projects, view, edit, create
 or delete them.
 
-
-There are a couple of extras that comes with JigsawViews::
+There are a couple of extras that comes with JigsawViews:
 
 - inlines formsets
 - automatic filters
