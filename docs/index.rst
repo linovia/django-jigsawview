@@ -18,6 +18,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   tutorial
    design
    object_piece
 
