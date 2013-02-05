@@ -1,7 +1,7 @@
 Object Piece
 ~~~~~~~~~~~~
 
-This piece will expose a Django Model. That piece can morph according to the view's request.
+This piece will expose a Django Model. That piece will morph according to the view's request.
 
 Options :
 
