@@ -38,4 +38,8 @@ top Model and you're done::
 You can then use PeoplePiece as a regular piece, it'll come with an extra
 formset.
 
-ObjectPiece.inlines is a dictionnary 
+
+InlineFormsetPiece API
+----------------------
+
+
