@@ -5,7 +5,7 @@ Basic use case
 ==============
 
 The basic use case will look pretty similar to the Django generic
-class based views. Let's start with a basic models.
+class based views. Let's start with a basic models::
 
 
     class Project(models.Model):
@@ -14,7 +14,7 @@ class based views. Let's start with a basic models.
         members = models.ManyToManyField('auth.User', related_name='projects')
 
 
-We are going to tie this class to an ObjectPiece. 
+Next step, we are going to tie this models to an ObjectPiece::
 
 
     from jigsawview.pieces import ObjectPiece
@@ -26,7 +26,7 @@ We are going to tie this class to an ObjectPiece.
 
 In order to use this piece we will create a view that use it. JigsawViews
 are very similar to Models or Forms except that they'll use Pieces instead of
-Fields.
+Fields::
 
 
     from jigsawview import JigsawView
@@ -35,7 +35,7 @@ Fields.
         project = ProjectMixin()
 
 
-Last, we need to configure our urls.
+Last, we need to configure our urls::
 
 
     url(r'^projects/$',
@@ -59,7 +59,7 @@ And now, you have all the basic views to list your projects, view, edit, create
 or delete them.
 
 
-There are a couple of extras that comes with JigsawViews:
+There are a couple of extras that comes with JigsawViews::
 
 - inlines formsets
 - automatic filters
