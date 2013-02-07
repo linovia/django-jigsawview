@@ -31,7 +31,7 @@ class MyInlinePiece(InlineFormsetPiece):
 class MyRootPiece(ObjectPiece):
     model = MyObjectModel
     inlines = {
-        'data': MyInlinePiece(),
+        'data': MyInlinePiece,
     }
 
 
@@ -41,13 +41,13 @@ class FilterPiece(ObjectPiece):
 
 
 class ObjectView(JigsawView):
-    other = MyOtherObjectPiece(mode='list')
-    obj = MyObjectPiece()
+    other = MyOtherObjectPiece.as_piece(mode='list')
+    obj = MyObjectPiece.as_piece()
 
 
 class SingleObjectView(JigsawView):
-    obj = MyObjectPiece()
+    obj = MyObjectPiece.as_piece()
 
 
 class InlineObjectView(JigsawView):
-    obj = MyRootPiece()
+    obj = MyRootPiece.as_piece()

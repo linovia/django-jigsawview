@@ -4,6 +4,8 @@ Base classes for the jigsawview pieces
 
 from __future__ import unicode_literals
 
+from django.utils.decorators import classonlymethod
+
 import copy
 
 
@@ -23,19 +25,13 @@ class UnboundPiece(object):
         kwargs = copy.copy(self.cls_kwargs)
         kwargs.update(instance_kwargs)
         kwargs['creation_counter'] = self.creation_counter
-        return self.cls(bound=True, **kwargs)
+        return self.cls(**kwargs)
 
 
 class BasePiece(object):
 
     # Tracks each time a Field instance is created. Used to retain order.
     creation_counter = 0
-
-    def __new__(cls, **kwargs):
-        bound = kwargs.pop('bound', False)
-        if not bound:
-            return UnboundPiece(cls, **kwargs)
-        return super(BasePiece, cls).__new__(cls, **kwargs)
 
     def __init__(self, *args, **kwargs):
         for k, v in kwargs.items():
@@ -45,6 +41,21 @@ class BasePiece(object):
     def add_kwargs(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
+
+    @classonlymethod
+    def as_piece(cls, **initkwargs):
+        """
+        Standart entry point.
+        """
+
+        # Sanitize keyword arguments
+        for key in initkwargs:
+            if not hasattr(cls, key):
+                raise TypeError("%s() received an invalid keyword %r. as_view "
+                                "only accepts arguments that are already "
+                                "attributes of the class." % (cls.__name__, key))
+
+        return UnboundPiece(cls, **initkwargs)
 
 
 class Piece(BasePiece):

@@ -51,33 +51,33 @@ class ContextDependsOnModePiece(Piece):
 
 
 class MyView1(JigsawView):
-    piece1 = MyPiece1()
-    piece2 = MyPiece2()
+    piece1 = MyPiece1.as_piece()
+    piece2 = MyPiece2.as_piece()
 
 
 class MyView2(JigsawView):
-    piece2 = MyPiece2()
-    piece1 = MyPiece1()
+    piece2 = MyPiece2.as_piece()
+    piece1 = MyPiece1.as_piece()
 
 
 class MySubView(MyView1):
-    piece3 = MyPiece1()
+    piece3 = MyPiece1.as_piece()
 
 
 class MySubView2(MyView2):
-    piece3 = MyPiece1()
+    piece3 = MyPiece1.as_piece()
 
 
 class MyView4(JigsawView):
-    piece1 = MyPiece1(default_mode='list')
+    piece1 = MyPiece1.as_piece(default_mode='list')
 
 
 class DiscardContextView(MyView1):
-    discard_context_piece = DiscardContextPiece()
+    discard_context_piece = DiscardContextPiece.as_piece()
 
 
 class ContextDependsOnModeView(MyView1):
-    mode_dependant_context = ContextDependsOnModePiece()
+    mode_dependant_context = ContextDependsOnModePiece.as_piece()
 
 
 #
@@ -88,9 +88,9 @@ class ContextDependsOnModeView(MyView1):
 class TestJigsawViewPiece(TestCase):
 
     def test_two_Piece_instances_have_different_creation_counter(self):
-        piece1 = MyPiece1()
-        piece2 = MyPiece2()
-        piece1b = MyPiece1()
+        piece1 = MyPiece1.as_piece()
+        piece2 = MyPiece2.as_piece()
+        piece1b = MyPiece1.as_piece()
         self.assertEqual(piece1.creation_counter + 1, piece2.creation_counter)
         self.assertEqual(piece2.creation_counter + 1, piece1b.creation_counter)
 
