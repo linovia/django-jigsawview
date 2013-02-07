@@ -1,45 +1,32 @@
 
-Inlines
-=======
+Principles
+==========
 
-ObjectPieces eases use of objects that have a link with its model.
-It is similar to the Django admin's inlines.
+JigsawView is an alternative implementation to Django's generic Class
+Based Views (called CBV later).
 
-Example
--------
-
-You need to start by defining the inline models::
-
-
-    class EmailFormset(InlineFormsetPiece):
-        model = Email
-        fk_field = 'contact'
-        fields = ('email', 'type')
+It has been created to manage some tedious work as CBV do but also
+to be much more extensible. Our goal is to get somewhere between
+generic CBV, the admin's classes and more flexibility.
 
 
-A few notable things. You'll need to define how the inlines relates to the
-parent object. This is done with the fk_field that usually will be a
-ForeignKey.
-
-Also note that you can define the fields you want to see in your inline.
-
-Once you have those inlines defined, you'll need to include them in the
-top Model and you're done::
+JigsawView uses two major familly of classes. One is the view itself, the
+other is a piece which can be a form, a formset or a model. You can use as many
+pieces as you want in a view.
 
 
-    class PeoplePiece(ObjectPiece):
-        model = People
-        pk_url_kwarg = 'people_id'
-        inlines = {
-            'websites': WebsiteFormset(),
-        }
+Unlike Django's generic CBV, a JigsawView isn't forced to have a particular
+form of the Model. This means that with a single view class, you can:
+
+- create a new instance
+- update an instance
+- delete an instance
+- list all the instances
+- view a particular instance
 
 
-You can then use PeoplePiece as a regular piece, it'll come with an extra
-formset.
-
-
-InlineFormsetPiece API
-----------------------
+The way a Model is shown can be differed until the url resolution. For the
+same reason, the template name will be altered according to how we represent
+our Model.
 
 

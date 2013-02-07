@@ -21,6 +21,7 @@ Contents:
    tutorial
    usage
    filters
+   inlines
 
 
 Indices and tables
