@@ -16,6 +16,7 @@ from django.core.paginator import Paginator, InvalidPage
 import django_filters
 
 from jigsawview.pieces.base import Piece
+from .filter_search import MultiFieldFilter
 
 
 class ObjectPiece(Piece):
@@ -47,23 +48,35 @@ class ObjectPiece(Piece):
     inlines = {}
 
     filters = None
+    search = None
     filter_class = None
 
     def __init__(self, *args, **kwargs):
         super(ObjectPiece, self).__init__(*args, **kwargs)
         self._inlines = {}
         self._kwargs = {}
+
+        filters = self.filters or []
+        if self.search:
+            filters = ('search',) + filters
+
         if self.filters and not self.filter_class:
             meta = type(str('Meta'), (object,), {
                     'model': self.model,
-                    'fields': self.filters,
+                    'fields': filters,
                 }
             )
+
+            fields = {
+                'Meta': meta,
+            }
+            if self.search:
+                fields['search'] = MultiFieldFilter(self.search)
+
             self.filter_class = type(
                 str('%sFilter' % self.__class__.__name__),
-                (django_filters.FilterSet,), {
-                'Meta': meta,
-            })
+                (django_filters.FilterSet,),
+                fields)
 
     #
     # Single object management
