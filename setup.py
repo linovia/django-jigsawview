@@ -23,7 +23,7 @@ install_requires = [
 
 setup(
     name='django-jigsawview',
-    version='0.0.1',
+    version='0.1.0',
     author='Xavier Ordoquy',
     author_email='xordoquy@linovia.com',
     url='https://github.com/linovia/django-jigsawview',
@@ -41,7 +41,7 @@ setup(
         'Framework :: Django',
         'Operating System :: OS Independent',
         'Intended Audience :: Developers',
-        'Programming Language :: Python'
+        'Programming Language :: Python',
         'Environment :: Web Environment',
         'Development Status :: 2 - Pre-Alpha',
         'Programming Language :: Python :: 3',
