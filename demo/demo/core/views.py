@@ -8,7 +8,7 @@ from demo.core.models import Project, Milestone, Bug
 from django.core.urlresolvers import reverse
 
 
-class ProjectMixin(ObjectPiece):
+class ProjectPiece(ObjectPiece):
     model = Project
     pk_url_kwarg = 'project_id'
 
@@ -19,7 +19,7 @@ class ProjectMixin(ObjectPiece):
         return Project.objects.filter(members=self.request.user.id)
 
 
-class MilestoneMixin(ObjectPiece):
+class MilestonePiece(ObjectPiece):
     model = Milestone
     pk_url_kwarg = 'milestone_id'
 
@@ -30,7 +30,7 @@ class MilestoneMixin(ObjectPiece):
         return Milestone.objects.filter(project=self.view.context['project'])
 
 
-class BugMixin(ObjectPiece):
+class BugPiece(ObjectPiece):
     model = Bug
     pk_url_kwarg = 'bug_id'
 
@@ -47,17 +47,17 @@ class BugMixin(ObjectPiece):
 
 
 class ProjectView(JigsawView):
-    project = ProjectMixin(default_mode='detail')
+    project = ProjectPiece.as_piece(default_mode='detail')
 
 
 class MilestoneView(ProjectView):
-    milestone = MilestoneMixin(default_mode='detail')
+    milestone = MilestonePiece.as_piece(default_mode='detail')
 
 
 class BugView(ProjectView):
-    milestones = MilestoneMixin(mode='list')
-    bug = BugMixin(default_mode='detail')
+    milestones = MilestonePiece.as_piece(mode='list')
+    bug = BugPiece.as_piece(default_mode='detail')
 
 
 class BugMilestoneView(MilestoneView):
-    bug = BugMixin(default_mode='detail')
+    bug = BugPiece.as_piece(default_mode='detail')
