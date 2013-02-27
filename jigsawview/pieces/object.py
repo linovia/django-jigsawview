@@ -325,6 +325,13 @@ class ObjectPiece(Piece):
         return all([formset.is_valid() for formset in self._inlines.values()])
 
     #
+    # Fitlers
+    #
+
+    def get_filter_class(self):
+        return self.filter_class
+
+    #
     # Generic members
     #
 
@@ -340,8 +347,9 @@ class ObjectPiece(Piece):
             context_object_name = self.get_context_object_name()
 
             # Filters
-            if self.filter_class:
-                filters = self.filter_class(self.request.GET, self.get_queryset())
+            filter_class = self.get_filter_class()
+            if filter_class:
+                filters = filter_class(self.request.GET, self.get_queryset())
                 context[context_object_name + '_filters'] = filters
                 objs = filters.qs
 
