@@ -379,12 +379,6 @@ class InlinesMixin(object):
             )
 
     def is_form_valid(self):
-        return self._form.is_valid() and self.are_formsets_valid()
-
-    def are_formsets_valid(self):
-        """
-        Return True if all the formsets are valid
-        """
         return all([formset.is_valid() for formset in self._inlines.values()])
 
     def get_context_data(self, context, **kwargs):
