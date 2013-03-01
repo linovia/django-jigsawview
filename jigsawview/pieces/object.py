@@ -153,16 +153,20 @@ class FilterMixin(object):
                 'Meta': meta,
             })
 
+    def get_filter_class(self):
+        return self.filter_class
+
     def get_filtered_queryset(self):
         if self._filters:
             return self._filters.qs
         return super(FilterMixin, self).get_filtered_queryset()
 
     def get_context_data(self, context, **kwargs):
-        if self.filter_class:
+        filter_class = self.get_filter_class()
+        if filter_class:
             ctx_name = self.get_context_object_name()
             qs = self.get_queryset()
-            self._filters = self.filter_class(self.request.GET, qs)
+            self._filters = filter_class(self.request.GET, qs)
             context['%s_filters' % ctx_name] = self._filters
 
         return super(FilterMixin, self).get_context_data(context, **kwargs)
@@ -311,6 +315,12 @@ class ObjectFormMixin(object):
             args['instance'] = kwargs['instance']
         return args
 
+    def is_form_valid(self):
+        valid = self._form.is_valid()
+        if hasattr(super(ObjectFormMixin, self), 'is_form_valid'):
+            valid = valid and super(ObjectFormMixin, self).is_form_valid()
+        return valid
+
     def form_valid(self, form):
         """
         Called when the object form is valid.
@@ -367,6 +377,9 @@ class InlinesMixin(object):
                 root_instance=instance,
                 **self._kwargs
             )
+
+    def is_form_valid(self):
+        return self._form.is_valid() and self.are_formsets_valid()
 
     def are_formsets_valid(self):
         """
@@ -431,9 +444,6 @@ class ObjectPiece(ObjectFormMixin, InlinesMixin, FilterMixin, PaginationMixin,
     #
     # Generic members
     #
-
-    def is_form_valid(self):
-        return self._form.is_valid() and self.are_formsets_valid()
 
     def get_template_name(self, *args, **kwargs):
         app_name = None
