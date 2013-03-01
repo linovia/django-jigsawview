@@ -85,9 +85,13 @@ class Piece(BasePiece):
 
     def get_context_data(self, context, *args, **kwargs):
         """
-        Compute the view context for this piece.
+        Compute the context for this piece.
         """
         return context
 
     def dispatch(self, context):
+        """
+        If it returns a non empty value, it'll be returned as the view's
+        response.
+        """
         return

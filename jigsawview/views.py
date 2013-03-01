@@ -142,11 +142,19 @@ class JigsawView(six.with_metaclass(ViewMetaclass, object)):
         )
 
     def dispatch(self, request, *args, **kwargs):
+        """
+        Process a request by calling the pieces.
+        """
+        # First set all the pieces' arguments
         for piece_name in reversed(list(self.pieces.keys())):
             piece = getattr(self, piece_name)
             piece.add_kwargs(**kwargs)
             piece.add_kwargs(request=request)
+
+        # Process the context
         context = self.get_context_data(request, **kwargs)
+
+        # Try to find if a piece has an opinion on what the response should be
         for piece_name in reversed(list(self.pieces.keys())):
             piece = getattr(self, piece_name)
             result = piece.dispatch(context)
