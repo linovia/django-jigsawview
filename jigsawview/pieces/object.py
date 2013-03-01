@@ -18,7 +18,7 @@ import django_filters
 from jigsawview.pieces.base import Piece
 
 
-class ObjectPiece(Piece):
+class BaseObjectPiece(Piece):
 
     model = None
     queryset = None
@@ -27,32 +27,105 @@ class ObjectPiece(Piece):
     slug_url_kwarg = 'slug'
     pk_url_kwarg = 'pk'
 
+    def get_slug_field(self):
+        """
+        Get the name of a slug field to be used to look up by slug.
+        """
+        return self.slug_field
+
+    def get_context_object_name(self, obj=None):
+        """
+        Get the name to use for the object.
+        """
+        return self.view_name
+
+    #
+    # Filter hook
+    #
+
+    def get_filtered_queryset(self):
+        return self.get_queryset()
+
+    #
+    # Pagination hook
+    #
+
+    def paginate_queryset(self, objs):
+        return None, None, objs, False
+
+    #
+    # Generic functions
+    #
+
+    def get_context_data(self, context, **kwargs):
+        mode = self.mode
+        obj = None
+        if mode in ('detail', 'update', 'delete'):
+            obj = self.get_object(**kwargs)
+            context_object_name = self.get_context_object_name(obj)
+            context[context_object_name] = obj
+        elif mode == 'list':
+            context_object_name = self.get_context_object_name()
+
+            # Get the filtered object list
+            objs = self.get_filtered_queryset()
+
+            # Pagination
+            paginator, page, objs, is_paginated = self.paginate_queryset(objs)
+
+            context.update({
+                context_object_name + '_list': objs,
+                context_object_name + '_is_paginated': is_paginated,
+                context_object_name + '_paginator': paginator,
+                context_object_name + '_page_obj': page,
+            })
+
+        elif mode == 'new':
+            context_object_name = self.get_context_object_name()
+
+        if mode == 'update':
+            form = self.get_form(instance=obj)
+            context[context_object_name + '_form'] = form
+            self._form = form
+            self._create_inlines(instance=obj)
+        elif mode == 'new':
+            form = self.get_form()
+            context[context_object_name + '_form'] = form
+            self._form = form
+            self._create_inlines()
+
+        for name, instance in self._inlines.items():
+            context = instance.get_context_data(context, **kwargs)
+        return context
+
+    def dispatch(self, context):
+        if self.mode in ('update', 'new'):
+            form_name = self.get_context_object_name() + '_form'
+            form = context[form_name]
+            if self.is_form_valid():
+                result = self.form_valid(form)
+                for inline in self._inlines.values():
+                    inline.dispatch(context)
+                return result
+            return self.form_invalid(form)
+        return
+
+
+class ObjectFormMixin(object):
+
     initial = {}
     form_class = None
     success_url = None
 
-    fields = None
-    exclude = None
 
-    model_form_class = model_forms.ModelForm
-    formfield_callback = None
-
-    allow_empty = True
-    paginator_class = Paginator
-    page_kwarg = 'page'
-    page_all_name = 'all'
-    paginate_by = None
-    paginate_orphans = 0
-
-    inlines = {}
+class FilterMixin(object):
 
     filters = None
     filter_class = None
 
     def __init__(self, *args, **kwargs):
-        super(ObjectPiece, self).__init__(*args, **kwargs)
-        self._inlines = {}
-        self._kwargs = {}
+        self._filters = None
+        super(FilterMixin, self).__init__(*args, **kwargs)
         if self.filters and not self.filter_class:
             meta = type(str('Meta'), (object,), {
                     'model': self.model,
@@ -64,6 +137,108 @@ class ObjectPiece(Piece):
                 (django_filters.FilterSet,), {
                 'Meta': meta,
             })
+
+    def get_filtered_queryset(self):
+        if self._filters:
+            return self._filters.qs
+        return super(FilterMixin, self).get_filtered_queryset()
+
+    def get_context_data(self, context, **kwargs):
+        if self.filter_class:
+            ctx_name = self.get_context_object_name()
+            qs = self.get_queryset()
+            self._filters = self.filter_class(self.request.GET, qs)
+            context['%s_filters' % ctx_name] = self._filters
+
+        return super(FilterMixin, self).get_context_data(context, **kwargs)
+
+
+class PaginationMixin(object):
+
+    allow_empty = True
+    paginator_class = Paginator
+    page_kwarg = 'page'
+    page_all_name = 'all'
+    paginate_by = None
+    paginate_orphans = 0
+
+    def paginate_queryset(self, queryset):
+        """
+        Paginate the queryset, if needed.
+        """
+        page_size = self.get_paginate_by(queryset)
+
+        if page_size is None:
+            return super(PaginationMixin, self).paginate_queryset(queryset)
+
+        page_kwarg = self.page_kwarg
+        page = self.request.GET.get(page_kwarg) or 1
+        if page == self.page_all_name:
+            return (None, None, queryset, False)
+        paginator = self.get_paginator(
+            queryset, page_size, orphans=self.get_paginate_orphans(),
+            allow_empty_first_page=self.get_allow_empty())
+        try:
+            page_number = int(page)
+        except ValueError:
+            if page == 'last':
+                page_number = paginator.num_pages
+            else:
+                raise Http404(_("Page is not 'last', nor can it be converted to an int."))
+        try:
+            page = paginator.page(page_number)
+            return (paginator, page, page.object_list, page.has_other_pages())
+        except InvalidPage as e:
+            raise Http404(_('Invalid page (%(page_number)s): %(message)s') % {
+                                'page_number': page_number,
+                                'message': str(e)
+            })
+
+    def get_paginate_by(self, queryset):
+        """
+        Get the number of items to paginate by, or ``None`` for no pagination.
+        """
+        return self.paginate_by
+
+    def get_paginator(self, queryset, per_page, orphans=0,
+                      allow_empty_first_page=True, **kwargs):
+        """
+        Return an instance of the paginator for this view.
+        """
+        return self.paginator_class(
+            queryset, per_page, orphans=orphans,
+            allow_empty_first_page=allow_empty_first_page, **kwargs)
+
+    def get_paginate_orphans(self):
+        """
+        Returns the maximum number of orphans extend the last page by when
+        paginating.
+        """
+        return self.paginate_orphans
+
+    def get_allow_empty(self):
+        """
+        Returns ``True`` if the view should display empty lists, and ``False``
+        if a 404 should be raised instead.
+        """
+        return self.allow_empty
+
+
+class ObjectPiece(ObjectFormMixin, FilterMixin, PaginationMixin,
+    BaseObjectPiece):
+
+    fields = None
+    exclude = None
+
+    model_form_class = model_forms.ModelForm
+    formfield_callback = None
+
+    inlines = {}
+
+    def __init__(self, *args, **kwargs):
+        super(ObjectPiece, self).__init__(*args, **kwargs)
+        self._inlines = {}
+        self._kwargs = {}
 
     #
     # Single object management
@@ -104,18 +279,6 @@ class ObjectPiece(Piece):
             raise Http404(_("No %(verbose_name)s found matching the query") %
                           {'verbose_name': queryset.model._meta.verbose_name})
         return obj
-
-    def get_slug_field(self):
-        """
-        Get the name of a slug field to be used to look up by slug.
-        """
-        return self.slug_field
-
-    def get_context_object_name(self, obj=None):
-        """
-        Get the name to use for the object.
-        """
-        return self.view_name
 
     #
     # Queryset
@@ -226,65 +389,6 @@ class ObjectPiece(Piece):
         return url
 
     #
-    # Pagination
-    #
-    def paginate_queryset(self, queryset, page_size):
-        """
-        Paginate the queryset, if needed.
-        """
-        page_kwarg = self.page_kwarg
-        page = self.request.GET.get(page_kwarg) or 1
-        if page == self.page_all_name:
-            return (None, None, queryset, False)
-        paginator = self.get_paginator(
-            queryset, page_size, orphans=self.get_paginate_orphans(),
-            allow_empty_first_page=self.get_allow_empty())
-        try:
-            page_number = int(page)
-        except ValueError:
-            if page == 'last':
-                page_number = paginator.num_pages
-            else:
-                raise Http404(_("Page is not 'last', nor can it be converted to an int."))
-        try:
-            page = paginator.page(page_number)
-            return (paginator, page, page.object_list, page.has_other_pages())
-        except InvalidPage as e:
-            raise Http404(_('Invalid page (%(page_number)s): %(message)s') % {
-                                'page_number': page_number,
-                                'message': str(e)
-            })
-
-    def get_paginate_by(self, queryset):
-        """
-        Get the number of items to paginate by, or ``None`` for no pagination.
-        """
-        return self.paginate_by
-
-    def get_paginator(self, queryset, per_page, orphans=0,
-                      allow_empty_first_page=True, **kwargs):
-        """
-        Return an instance of the paginator for this view.
-        """
-        return self.paginator_class(
-            queryset, per_page, orphans=orphans,
-            allow_empty_first_page=allow_empty_first_page, **kwargs)
-
-    def get_paginate_orphans(self):
-        """
-        Returns the maximum number of orphans extend the last page by when
-        paginating.
-        """
-        return self.paginate_orphans
-
-    def get_allow_empty(self):
-        """
-        Returns ``True`` if the view should display empty lists, and ``False``
-        if a 404 should be raised instead.
-        """
-        return self.allow_empty
-
-    #
     # Inlines management
     #
 
@@ -314,66 +418,6 @@ class ObjectPiece(Piece):
     #
     # Generic members
     #
-
-    def get_context_data(self, context, **kwargs):
-        mode = self.mode
-        obj = None
-        if mode in ('detail', 'update', 'delete'):
-            obj = self.get_object(**kwargs)
-            context_object_name = self.get_context_object_name(obj)
-            context[context_object_name] = obj
-        elif mode == 'list':
-            objs = self.get_queryset()
-            context_object_name = self.get_context_object_name()
-
-            # Filters
-            if self.filter_class:
-                filters = self.filter_class(self.request.GET, self.get_queryset())
-                context[context_object_name + '_filters'] = filters
-                objs = filters.qs
-
-            # Pagination
-            page_size = self.get_paginate_by(objs)
-            paginator, page, is_paginated = None, None, False
-            if page_size:
-                paginator, page, objs, is_paginated = self.paginate_queryset(objs, page_size)
-
-            context.update({
-                context_object_name + '_list': objs,
-                context_object_name + '_is_paginated': is_paginated,
-                context_object_name + '_paginator': paginator,
-                context_object_name + '_page_obj': page,
-            })
-
-        elif mode == 'new':
-            context_object_name = self.get_context_object_name()
-
-        if mode == 'update':
-            form = self.get_form(instance=obj)
-            context[context_object_name + '_form'] = form
-            self._form = form
-            self._create_inlines(instance=obj)
-        elif mode == 'new':
-            form = self.get_form()
-            context[context_object_name + '_form'] = form
-            self._form = form
-            self._create_inlines()
-
-        for name, instance in self._inlines.items():
-            context = instance.get_context_data(context, **kwargs)
-        return context
-
-    def dispatch(self, context):
-        if self.mode in ('update', 'new'):
-            form_name = self.get_context_object_name() + '_form'
-            form = context[form_name]
-            if self.is_form_valid():
-                result = self.form_valid(form)
-                for inline in self._inlines.values():
-                    inline.dispatch(context)
-                return result
-            return self.form_invalid(form)
-        return
 
     def is_form_valid(self):
         return self._form.is_valid() and self.are_formsets_valid()
