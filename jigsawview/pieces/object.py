@@ -108,16 +108,11 @@ class BaseObjectPiece(Piece):
         elif mode == 'new':
             context_object_name = self.get_context_object_name()
 
-        if mode == 'update':
+        if mode in ('update', 'new'):
             form = self.get_form(instance=obj)
             context[context_object_name + '_form'] = form
             self._form = form
             self._create_inlines(instance=obj)
-        elif mode == 'new':
-            form = self.get_form()
-            context[context_object_name + '_form'] = form
-            self._form = form
-            self._create_inlines()
 
         return context
 
