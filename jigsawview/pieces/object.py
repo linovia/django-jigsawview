@@ -27,6 +27,10 @@ class BaseObjectPiece(Piece):
     slug_url_kwarg = 'slug'
     pk_url_kwarg = 'pk'
 
+    def __init__(self, *args, **kwargs):
+        super(BaseObjectPiece, self).__init__(*args, **kwargs)
+        self._kwargs = {}
+
     def get_slug_field(self):
         """
         Get the name of a slug field to be used to look up by slug.
@@ -38,6 +42,10 @@ class BaseObjectPiece(Piece):
         Get the name to use for the object.
         """
         return self.view_name
+
+    def add_kwargs(self, **kwargs):
+        super(BaseObjectPiece, self).add_kwargs(**kwargs)
+        self._kwargs = copy.copy(kwargs)
 
     #
     # Filter hook
@@ -56,6 +64,23 @@ class BaseObjectPiece(Piece):
     #
     # Generic functions
     #
+
+    def get_queryset(self):
+        """
+        Get the queryset to look an object up against. May not be called if
+        `get_object` is overridden.
+        """
+        if self.queryset is None:
+            if self.model:
+                return self.model._default_manager.all()
+            else:
+                raise ImproperlyConfigured(
+                    "%(cls)s is missing a queryset. Define "
+                    "%(cls)s.model, %(cls)s.queryset, or override "
+                    "%(cls)s.get_object()." % {
+                        'cls': self.__class__.__name__
+                    })
+        return self.queryset._clone()
 
     def get_context_data(self, context, **kwargs):
         mode = self.mode
@@ -94,8 +119,6 @@ class BaseObjectPiece(Piece):
             self._form = form
             self._create_inlines()
 
-        for name, instance in self._inlines.items():
-            context = instance.get_context_data(context, **kwargs)
         return context
 
     def dispatch(self, context):
@@ -111,12 +134,9 @@ class BaseObjectPiece(Piece):
         return
 
 
-class ObjectFormMixin(object):
-
-    initial = {}
-    form_class = None
-    success_url = None
-
+#
+# FILTER MIXIN
+#
 
 class FilterMixin(object):
 
@@ -152,6 +172,10 @@ class FilterMixin(object):
 
         return super(FilterMixin, self).get_context_data(context, **kwargs)
 
+
+#
+# PAGINATION MIXIN
+#
 
 class PaginationMixin(object):
 
@@ -224,86 +248,21 @@ class PaginationMixin(object):
         return self.allow_empty
 
 
-class ObjectPiece(ObjectFormMixin, FilterMixin, PaginationMixin,
-    BaseObjectPiece):
+#
+# FORM MIXIN
+#
+
+class ObjectFormMixin(object):
+
+    initial = {}
+    form_class = None
+    success_url = None
 
     fields = None
     exclude = None
 
     model_form_class = model_forms.ModelForm
     formfield_callback = None
-
-    inlines = {}
-
-    def __init__(self, *args, **kwargs):
-        super(ObjectPiece, self).__init__(*args, **kwargs)
-        self._inlines = {}
-        self._kwargs = {}
-
-    #
-    # Single object management
-    #
-
-    def get_object(self, queryset=None, **kwargs):
-        """
-        Returns the object the view is displaying.
-
-        By default this requires `self.queryset` and a `pk` or `slug` argument
-        in the URLconf, but subclasses can override this to return any object.
-        """
-        # Use a custom queryset if provided; this is required for subclasses
-        # like DateDetailView
-        if queryset is None:
-            queryset = self.get_queryset()
-
-        # Next, try looking up by primary key.
-        pk = kwargs.get(self.pk_url_kwarg, None)
-        slug = kwargs.get(self.slug_url_kwarg, None)
-        if pk is not None:
-            queryset = queryset.filter(pk=pk)
-
-        # Next, try looking up by slug.
-        elif slug is not None:
-            slug_field = self.get_slug_field()
-            queryset = queryset.filter(**{slug_field: slug})
-
-        # If none of those are defined, it's an error.
-        else:
-            raise AttributeError("Generic detail view %s must be called with "
-                                 "either an object pk or a slug."
-                                 % self.__class__.__name__)
-
-        try:
-            obj = queryset.get()
-        except ObjectDoesNotExist:
-            raise Http404(_("No %(verbose_name)s found matching the query") %
-                          {'verbose_name': queryset.model._meta.verbose_name})
-        return obj
-
-    #
-    # Queryset
-    #
-
-    def get_queryset(self):
-        """
-        Get the queryset to look an object up against. May not be called if
-        `get_object` is overridden.
-        """
-        if self.queryset is None:
-            if self.model:
-                return self.model._default_manager.all()
-            else:
-                raise ImproperlyConfigured(
-                    "%(cls)s is missing a queryset. Define "
-                    "%(cls)s.model, %(cls)s.queryset, or override "
-                    "%(cls)s.get_object()." % {
-                        'cls': self.__class__.__name__
-                    })
-        return self.queryset._clone()
-
-    #
-    # Form management
-    #
 
     def get_initial(self):
         """
@@ -388,13 +347,18 @@ class ObjectPiece(ObjectFormMixin, FilterMixin, PaginationMixin,
                     " a get_absolute_url method on the Model.")
         return url
 
-    #
-    # Inlines management
-    #
 
-    def add_kwargs(self, **kwargs):
-        super(ObjectPiece, self).add_kwargs(**kwargs)
-        self._kwargs = copy.copy(kwargs)
+#
+# INLINE MIXIN
+#
+
+class InlinesMixin(object):
+
+    inlines = {}
+
+    def __init__(self, *args, **kwargs):
+        super(InlinesMixin, self).__init__(*args, **kwargs)
+        self._inlines = {}
 
     def _create_inlines(self, instance=None):
         """
@@ -414,6 +378,60 @@ class ObjectPiece(ObjectFormMixin, FilterMixin, PaginationMixin,
         Return True if all the formsets are valid
         """
         return all([formset.is_valid() for formset in self._inlines.values()])
+
+    def get_context_data(self, context, **kwargs):
+        context = super(InlinesMixin, self).get_context_data(context, **kwargs)
+        for name, instance in self._inlines.items():
+            context = instance.get_context_data(context, **kwargs)
+        return context
+
+
+#
+# OBJECT PIECE
+#
+
+class ObjectPiece(ObjectFormMixin, InlinesMixin, FilterMixin, PaginationMixin,
+    BaseObjectPiece):
+
+    #
+    # Single object management
+    #
+
+    def get_object(self, queryset=None, **kwargs):
+        """
+        Returns the object the view is displaying.
+
+        By default this requires `self.queryset` and a `pk` or `slug` argument
+        in the URLconf, but subclasses can override this to return any object.
+        """
+        # Use a custom queryset if provided; this is required for subclasses
+        # like DateDetailView
+        if queryset is None:
+            queryset = self.get_queryset()
+
+        # Next, try looking up by primary key.
+        pk = kwargs.get(self.pk_url_kwarg, None)
+        slug = kwargs.get(self.slug_url_kwarg, None)
+        if pk is not None:
+            queryset = queryset.filter(pk=pk)
+
+        # Next, try looking up by slug.
+        elif slug is not None:
+            slug_field = self.get_slug_field()
+            queryset = queryset.filter(**{slug_field: slug})
+
+        # If none of those are defined, it's an error.
+        else:
+            raise AttributeError("Generic detail view %s must be called with "
+                                 "either an object pk or a slug."
+                                 % self.__class__.__name__)
+
+        try:
+            obj = queryset.get()
+        except ObjectDoesNotExist:
+            raise Http404(_("No %(verbose_name)s found matching the query") %
+                          {'verbose_name': queryset.model._meta.verbose_name})
+        return obj
 
     #
     # Generic members
