@@ -316,10 +316,7 @@ class ObjectFormMixin(object):
         return args
 
     def is_form_valid(self):
-        valid = self._form.is_valid()
-        if hasattr(super(ObjectFormMixin, self), 'is_form_valid'):
-            valid = valid and super(ObjectFormMixin, self).is_form_valid()
-        return valid
+        return self._form.is_valid()
 
     def form_valid(self, form):
         """
@@ -357,7 +354,7 @@ class ObjectFormMixin(object):
 # INLINE MIXIN
 #
 
-class InlinesMixin(object):
+class InlinesMixin(ObjectFormMixin):
 
     inlines = {}
 
@@ -379,7 +376,8 @@ class InlinesMixin(object):
             )
 
     def is_form_valid(self):
-        return all([formset.is_valid() for formset in self._inlines.values()])
+        valid = super(InlinesMixin, self).is_form_valid()
+        return valid and all([formset.is_valid() for formset in self._inlines.values()])
 
     def get_context_data(self, context, **kwargs):
         context = super(InlinesMixin, self).get_context_data(context, **kwargs)
@@ -392,7 +390,7 @@ class InlinesMixin(object):
 # OBJECT PIECE
 #
 
-class ObjectPiece(ObjectFormMixin, InlinesMixin, FilterMixin, PaginationMixin,
+class ObjectPiece(InlinesMixin, FilterMixin, PaginationMixin,
     BaseObjectPiece):
 
     #
