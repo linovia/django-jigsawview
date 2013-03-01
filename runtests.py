@@ -38,5 +38,4 @@ def runtests(*test_args):
     sys.exit(failures)
 
 if __name__ == '__main__':
-    runtests()
-
+    runtests(*sys.argv[1:])
