@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block container %}
-<h1>Bugs for project <a href="{% url project project.id %}">{{ project.name }}</a></h1>
+<h1>Bugs for project <a href="{% url 'project' project.id %}">{{ project.name }}</a></h1>
 
 <div class="row">
     <div class="span8">
@@ -21,7 +21,7 @@
                 {% for bug in bug_list %}
                 <tr>
                     <td>
-                        <a href="{% url bug project.id bug.id %}">{{ bug.title }}</a>
+                        <a href="{% url 'bug' project.id bug.id %}">{{ bug.title }}</a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -38,6 +38,6 @@
 </div>
 
 
-<a class="btn btn-primary" href="{% url new-bug project.id %}">Open a bug</a>
+<a class="btn btn-primary" href="{% url 'new-bug' project.id %}">Open a bug</a>
 
 {% endblock container %}

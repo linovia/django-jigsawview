@@ -40,9 +40,9 @@
           <a class="brand" href="#">Demo project</a>
           <div class="nav-collapse">
             <ul class="nav">
-              <li class="active"><a href="{% url projects %}">Projects</a></li>
+              <li class="active"><a href="{% url 'projects' %}">Projects</a></li>
               <li><a href="#">Milestones</a></li>
-              <li><a href="{% url bugs project.id %}">Bugs</a></li>
+              <li><a href="{% url 'bugs' project.id %}">Bugs</a></li>
             </ul>
           </div><!--/.nav-collapse -->
           {% endblock menu_content %}
