@@ -85,13 +85,14 @@ class BaseObjectPiece(Piece):
     def get_context_data(self, context, **kwargs):
         mode = self.mode
         obj = None
+        context_object_name = self.get_context_object_name(obj)
+
         if mode in ('detail', 'update', 'delete'):
             obj = self.get_object(**kwargs)
-            context_object_name = self.get_context_object_name(obj)
             context[context_object_name] = obj
-        elif mode == 'list':
-            context_object_name = self.get_context_object_name()
+            self.object = obj
 
+        elif mode == 'list':
             # Get the filtered object list
             objs = self.get_filtered_queryset()
 
@@ -104,15 +105,6 @@ class BaseObjectPiece(Piece):
                 context_object_name + '_paginator': paginator,
                 context_object_name + '_page_obj': page,
             })
-
-        elif mode == 'new':
-            context_object_name = self.get_context_object_name()
-
-        if mode in ('update', 'new'):
-            form = self.get_form(instance=obj)
-            context[context_object_name + '_form'] = form
-            self._form = form
-            self._create_inlines(instance=obj)
 
         return context
 
@@ -325,8 +317,6 @@ class ObjectFormMixin(object):
         """
         obj = form.save()
         self.object = obj
-        for inline in self._inlines.values():
-            inline.root_instance = obj
         return HttpResponseRedirect(self.get_success_url(obj=obj))
 
     def form_invalid(self, form):
@@ -348,6 +338,16 @@ class ObjectFormMixin(object):
                     "No URL to redirect to.  Either provide a url or define"
                     " a get_absolute_url method on the Model.")
         return url
+
+    def get_context_data(self, context, **kwargs):
+        context = super(ObjectFormMixin, self).get_context_data(context, **kwargs)
+        if self.mode in ('update', 'new'):
+            obj = getattr(self, 'object', None)
+            context_object_name = self.get_context_object_name(obj=obj)
+            form = self.get_form(instance=obj)
+            context[context_object_name + '_form'] = form
+            self._form = form
+        return context
 
 
 #
@@ -379,10 +379,24 @@ class InlinesMixin(ObjectFormMixin):
         valid = super(InlinesMixin, self).is_form_valid()
         return valid and all([formset.is_valid() for formset in self._inlines.values()])
 
+    def form_valid(self, form):
+        """
+        Called when the object form is valid.
+        Saves the object and set that object in the inlines.
+        """
+        obj = form.save()
+        self.object = obj
+        for inline in self._inlines.values():
+            inline.root_instance = obj
+        return HttpResponseRedirect(self.get_success_url(obj=obj))
+
     def get_context_data(self, context, **kwargs):
         context = super(InlinesMixin, self).get_context_data(context, **kwargs)
-        for name, instance in self._inlines.items():
-            context = instance.get_context_data(context, **kwargs)
+        if self.mode in ('update', 'new'):
+            obj = getattr(self, 'object', None)
+            self._create_inlines(instance=obj)
+            for name, instance in self._inlines.items():
+                context = instance.get_context_data(context, **kwargs)
         return context
 
 

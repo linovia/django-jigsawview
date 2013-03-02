@@ -10,6 +10,9 @@ import copy
 
 
 class UnboundPiece(object):
+    """
+    Acts similar to a lazy Piece instanciation.
+    """
     cls = None
     cls_kwargs = {}
 
