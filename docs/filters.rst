@@ -70,3 +70,47 @@ filter_class::
 
 
 And you're done.
+
+If you need an even more specific usage for filters, for example if you
+want to adjust the proposed values for the filters according to the user,
+then you should override the get_filter_class
+
+For example, let's redefine our previous filter and restrict the project list
+to the user's projects::
+
+
+    import django_filters
+    
+    class BugFilter(django_filters.FilterSet):
+        class Meta:
+            model = Bug
+            fields = ['project', 'milestone']
+
+        def __init__(self, user, *args, **kwargs):
+            self.user = user
+            super(ProductFilterSet, self).__init__(*args, **kwargs)
+
+            # Only keep projects the user has access to
+            projects_qs = self.filters['project'].extra['queryset']
+            projects_qs = projects_qs.filter(project_manager__user=self.user)
+            self.filters['project'].extra['queryset'] = projects_qs
+
+
+As you can see, we need the user to correctly filter the project list
+accordingly. If we simply set the filter_class we won't get it. Therefore we
+need to override the get_filter_class in our ObjectPiece::
+
+
+    class BugPiece(ObjectPiece):
+        model = Bug
+        pk_url_kwarg = 'bug_id'
+
+        def get_filter_class(self):
+            from django.utils.functional import curry
+            user = self.request.user
+            return curry(ProductFilterSet, user=user)
+
+
+We need to use the curry function to defer the class's instanciation. Whenever
+the filter class will be instanciated, it'll use the request's user as argument
+and the project list we'll get will be restricted to the user's ones.
