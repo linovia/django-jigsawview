@@ -47,6 +47,10 @@ milestones.
 Advanced usage
 --------------
 
+
+Using a custom filter class
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Filters can be easily customized with a custom django-filter's FilterSet.
 Imagine you defined a custom filter::
 
@@ -69,7 +73,8 @@ filter_class::
         filter_class = BugFilter
 
 
-And you're done.
+Filter class with custom init arguments
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you need an even more specific usage for filters, for example if you
 want to adjust the proposed values for the filters according to the user,
