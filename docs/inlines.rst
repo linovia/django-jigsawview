@@ -43,3 +43,27 @@ InlineFormsetPiece API
 ----------------------
 
 
+ModelFormsetPiece provides several ways to customize your formsets.
+
+
+``form_class``
+~~~~~~~~~~~~~~
+
+``InlineFormsetPiece`` can use a custom form class if the ``form_class``
+attribute is filled and there's no ``formset_factory``.
+
+
+``formset_factory``
+~~~~~~~~~~~~~~~~~~~
+
+The formset factory used by default. If none is provided, a default one
+will be created when the ``InlineFormsetPiece`` is instanciated.
+
+
+Extra parameters
+~~~~~~~~~~~~~~~~
+
+When using the default formset factory, you can use ``fields``, ``exclude``,
+``extra`` and ``can_delete`` arguments. Please refer to the Django
+documentation for more informations about their effects.
+
